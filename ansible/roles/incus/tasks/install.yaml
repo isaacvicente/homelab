@@ -1,0 +1,32 @@
+- name: Check distribution release and install Incus
+  become: true
+  when: ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] >= "24"
+  block:
+    - name: Install necessary packages
+      ansible.builtin.apt:
+        name: incus
+        update_cache: true
+        state: present
+
+    - name: Ensure subuid and subgid entries exist
+      ansible.builtin.lineinfile:
+        path: "{{ item }}"
+        mode: '644'
+        line: "root:1000000:1000000000"
+        create: true
+        regexp: '^root:1000000:1000000000$'
+        state: present
+      loop:
+        - /etc/subuid
+        - /etc/subgid
+
+    - name: Ensure group 'incus-admin' exists
+      ansible.builtin.group:
+        name: incus-admin
+        state: present
+
+    - name: Add current user to group 'incus-admin'
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: incus-admin
+        append: true

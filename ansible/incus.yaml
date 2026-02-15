@@ -1,0 +1,4 @@
+- name: Setup Incus
+  hosts: metal
+  roles:
+    - role: incus

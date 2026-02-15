@@ -1,0 +1,14 @@
+- name: Install Incus and prepare the host for setup
+  ansible.builtin.import_tasks: install.yaml
+  tags:
+    - install
+
+- name: Initialize Incus
+  ansible.builtin.import_tasks: init.yaml
+  tags:
+    - init
+
+- name: Prepare client for remote access
+  ansible.builtin.import_tasks: client.yaml
+  tags:
+    - client
