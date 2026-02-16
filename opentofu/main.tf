@@ -11,21 +11,31 @@ terraform {
 
 provider "incus" {}
 
-# K3s node profile with 4GB RAM and 2 vCPU
-resource "incus_profile" "k3s" {
-  name        = "k3s"
-  description = "Profile for k3s cluster instances"
+# K3s network
+resource "incus_network" "k3s" {
+  name = var.k3s_network.name
 
   config = {
-    "limits.cpu"    = "2"
-    "limits.memory" = "4GB"
+    "ipv4.address" = var.k3s_network.ipv4_address
+    "ipv4.nat"     = var.k3s_network.ipv4_nat
+  }
+}
+
+# K3s node profile
+resource "incus_profile" "k3s" {
+  name        = var.k3s_profile.name
+  description = var.k3s_profile.description
+
+  config = {
+    "limits.cpu"    = var.k3s_profile.cpu
+    "limits.memory" = var.k3s_profile.memory
   }
 
   device {
     name = "eth0"
     type = "nic"
     properties = {
-      network = "incusbr0"
+      network = var.k3s_network.name
     }
   }
 
@@ -34,16 +44,16 @@ resource "incus_profile" "k3s" {
     type = "disk"
     properties = {
       path = "/"
-      pool = "default"
+      pool = var.storage_pool
     }
   }
 }
 
 # K3s controller nodes
 resource "incus_instance" "k3s_controller" {
-  count    = 2
+  count    = var.controller_count
   name     = "k3s-controller-${count.index + 1}"
-  image    = "images:ubuntu/24.04"
+  image    = var.instance_image
   profiles = [incus_profile.k3s.name]
 
   config = {
@@ -53,9 +63,9 @@ resource "incus_instance" "k3s_controller" {
 
 # K3s worker nodes
 resource "incus_instance" "k3s_worker" {
-  count    = 2
+  count    = var.worker_count
   name     = "k3s-worker-${count.index + 1}"
-  image    = "images:ubuntu/24.04"
+  image    = var.instance_image
   profiles = [incus_profile.k3s.name]
 
   config = {
