@@ -1,0 +1,27 @@
+autoinstall:
+  version: 1
+  interactive-sections:
+    - network
+    - ssh
+  keyboard:
+    layout: br
+  source:
+    id: ubuntu-server-minimal
+  storage:
+  layout:
+    name: zfs
+  identity:
+    realname: 'Ubuntu User'
+    username: ubuntu
+    # Several tools can generate the encrypted password, such as `mkpasswd` from the whois package, or `openssl passwd`.
+    # For example: mkpasswd --method=SHA-512 --rounds=500000
+    password: ''
+    hostname: homelab
+  drivers:
+    install: true
+  packages:
+    - git
+    - vim
+  timezone: "America/Recife"
+  updates: all
+
