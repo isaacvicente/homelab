@@ -1,6 +1,6 @@
 # Autoinstall
 
-YAML configuration for an automatic Ubuntu Server installation.
+YAML configuration for automated Ubuntu Server installation.
 
 When writing the installation ISO to a USB flash drive, copy
 [`autoinstall.yaml`](./autoinstall.yaml) to the partition containing the
