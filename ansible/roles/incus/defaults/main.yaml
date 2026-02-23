@@ -3,10 +3,10 @@ incus_https_address: "[::]:8443"
 
 # Storage
 incus_storage_pool_name: "default"
-incus_storage_pool_driver: "dir"  # dir, zfs, btrfs, lvm
+incus_storage_pool_driver: "zfs"  # dir, zfs, btrfs, lvm
 
 # Network
-incus_network_name: "incusbr0"
+incus_network_name: "br-in"
 incus_network_ipv4_address: "auto"
 incus_network_ipv6_address: "auto"
 
