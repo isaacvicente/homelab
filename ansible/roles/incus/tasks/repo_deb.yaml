@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 - name: Add Zabbly APT repository
-  when: ansible_facts["distribution"] in ("Ubuntu", "Debian")'
+  when: ansible_facts["distribution"] in ("Ubuntu", "Debian")
   block:
     - name: Create apt keyring path
       ansible.builtin.file:
