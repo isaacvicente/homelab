@@ -1,6 +1,6 @@
 - name: Check distribution release and install Incus
   become: true
-  when: ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] >= "24"
+  when: ansible_facts['distribution'] == "Ubuntu" and ansible_facts['distribution_major_version'] >= "22"
   block:
     - name: Install necessary packages
       ansible.builtin.apt:
