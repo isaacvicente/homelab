@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 ---
 - name: Add Zabbly APT repository
+  become: true
   when: ansible_facts["distribution"] in ("Ubuntu", "Debian")
   block:
     - name: Create apt keyring path
@@ -28,6 +29,3 @@
         dest: /etc/apt/sources.list.d/ansible-zabbly-incus-{{ incus_release }}.sources
         mode: "0644"
       notify: Update apt
-
-- name: Force the handler executions
-  ansible.builtin.meta: flush_handlers
