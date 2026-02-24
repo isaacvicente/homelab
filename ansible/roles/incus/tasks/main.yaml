@@ -1,3 +1,8 @@
+- name: Add Zabbly source
+  ansible.builtin.import_tasks: repo_deb.yaml
+  tags:
+    - install
+
 - name: Install Incus and prepare the host for setup
   ansible.builtin.import_tasks: install.yaml
   tags:

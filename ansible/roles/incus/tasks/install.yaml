@@ -4,7 +4,11 @@
   block:
     - name: Install necessary packages
       ansible.builtin.apt:
-        name: incus
+        pkg:
+          - incus
+          - incus-client
+          - incus-ui-canonical
+          - qemu-system
         update_cache: true
         state: present
 

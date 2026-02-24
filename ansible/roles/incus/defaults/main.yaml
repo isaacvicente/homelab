@@ -1,3 +1,5 @@
+incus_release: "stable"
+
 # Incus API
 incus_https_address: "[::]:8443"
 
