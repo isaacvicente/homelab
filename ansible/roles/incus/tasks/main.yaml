@@ -8,6 +8,12 @@
   tags:
     - install
 
+- name: Configure network bridge for Incus VMs
+  ansible.builtin.import_tasks: bridge.yaml
+  tags:
+    - network
+    - bridge
+
 - name: Initialize Incus
   ansible.builtin.import_tasks: init.yaml
   tags:

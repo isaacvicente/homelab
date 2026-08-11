@@ -1,2 +1,13 @@
-opentofu/.terraform
+# OpenTofu provider cache and state
+opentofu/.terraform/
+opentofu/terraform.tfstate
+opentofu/terraform.tfstate.backup
+
+# Variable values and generated credentials — never commit these
+opentofu/terraform.tfvars
+opentofu/kubeconfig.yaml
+opentofu/talosconfig.yaml
+
+# Ansible inventory and secrets
 ansible/inventory/inventory.ini
+ansible/group_vars/all/vault.yaml

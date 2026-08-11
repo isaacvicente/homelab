@@ -1,14 +1,11 @@
 config:
   core.https_address: '{{ incus_https_address }}'
-networks:
-- config:
-    ipv4.address: {{ incus_network_ipv4_address }}
-    ipv6.address: {{ incus_network_ipv6_address }}
-  name: {{ incus_network_name }}
-  type: ""
-  project: default
+networks: []
 storage_pools:
-- config: {}
+- config:
+{% if incus_zfs_pool_device != "" %}
+    source: {{ incus_zfs_pool_device }}
+{% endif %}
   name: {{ incus_storage_pool_name }}
   driver: {{ incus_storage_pool_driver }}
 profiles:
@@ -16,7 +13,8 @@ profiles:
   devices:
     eth0:
       name: eth0
-      network: {{ incus_network_name }}
+      nictype: bridged
+      parent: {{ incus_bridge_name }}
       type: nic
     root:
       path: /

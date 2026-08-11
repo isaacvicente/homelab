@@ -1,0 +1,10 @@
+---
+- name: Setup MinIO state backend
+  hosts: metal
+  roles:
+    - role: minio
+
+- name: Setup Incus
+  hosts: metal
+  roles:
+    - role: incus

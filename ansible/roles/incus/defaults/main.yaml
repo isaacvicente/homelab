@@ -5,15 +5,14 @@ incus_https_address: "[::]:8443"
 
 # Storage
 incus_storage_pool_name: "default"
-incus_storage_pool_driver: "zfs"  # dir, zfs, btrfs, lvm
+incus_storage_pool_driver: "zfs"
+incus_zfs_pool_device: ""  # Leave empty for loop-backed file. Set to e.g. /dev/sdb for dedicated device.
 
-# Network
-incus_network_name: "br-in"
-incus_network_ipv4_address: "auto"
-incus_network_ipv6_address: "auto"
+# Network bridge — VMs attach to br0 and get IPs from the home router via DHCP
+incus_bridge_name: "br0"
+incus_bridge_parent_interface: "enp0s31f6"
 
 # Client config
 incus_remote_name: "homelab"
-incus_client_name: "incus-client"
 incus_client_config_path: "~/.config/incus"
 incus_server_cert_path: "/tmp/client.crt"

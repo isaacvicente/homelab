@@ -1,0 +1,18 @@
+# Managed by Ansible — do not edit manually.
+# Creates a Linux bridge ({{ incus_bridge_name }}) over {{ incus_bridge_parent_interface }}
+# so that Incus VMs get IP addresses directly from the home router via DHCP.
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ incus_bridge_parent_interface }}:
+      dhcp4: false
+      dhcp6: false
+  bridges:
+    {{ incus_bridge_name }}:
+      interfaces:
+        - {{ incus_bridge_parent_interface }}
+      dhcp4: true
+      parameters:
+        stp: false
+        forward-delay: 0

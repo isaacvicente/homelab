@@ -1,8 +1,34 @@
 terraform {
+  # Remote state stored in MinIO on the physical host.
+  # MinIO is set up by Ansible before this runs.
+  # Credentials and endpoint are passed via `tofu init -backend-config` flags.
+  backend "s3" {
+    bucket                      = "tfstate"
+    key                         = "homelab/terraform.tfstate"
+    region                      = "us-east-1"
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    skip_region_validation      = true
+    use_path_style              = true
+  }
+
   required_providers {
     incus = {
       source  = "lxc/incus"
       version = ">= 1.0.2"
+    }
+    talos = {
+      source  = "siderolabs/talos"
+      version = ">= 0.7.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = ">= 2.0.0"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = ">= 3.0.0"
     }
   }
 
@@ -11,64 +37,36 @@ terraform {
 
 provider "incus" {}
 
-# K3s network
-resource "incus_network" "k3s" {
-  name = var.k3s_network.name
+provider "talos" {}
 
-  config = {
-    "ipv4.address" = var.k3s_network.ipv4_address
-    "ipv4.nat"     = var.k3s_network.ipv4_nat
-  }
+module "incus" {
+  source = "./modules/incus"
+
+  incus_remote       = var.incus_remote
+  storage_pool       = var.storage_pool
+  bridge_interface   = var.bridge_interface
+  talos_version      = var.talos_version
+  talos_schematic_id = var.talos_schematic_id
+
+  cp_count  = var.cp_count
+  cp_cpu    = var.cp_cpu
+  cp_memory = var.cp_memory
+  cp_disk   = var.cp_disk
+
+  worker_count  = var.worker_count
+  worker_cpu    = var.worker_cpu
+  worker_memory = var.worker_memory
+  worker_disk   = var.worker_disk
 }
 
-# K3s node profile
-resource "incus_profile" "k3s" {
-  name        = var.k3s_profile.name
-  description = var.k3s_profile.description
+module "talos" {
+  source = "./modules/talos"
 
-  config = {
-    "limits.cpu"    = var.k3s_profile.cpu
-    "limits.memory" = var.k3s_profile.memory
-  }
-
-  device {
-    name = "eth0"
-    type = "nic"
-    properties = {
-      network = var.k3s_network.name
-    }
-  }
-
-  device {
-    name = "root"
-    type = "disk"
-    properties = {
-      path = "/"
-      pool = var.storage_pool
-    }
-  }
-}
-
-# K3s controller nodes
-resource "incus_instance" "k3s_controller" {
-  count    = var.controller_count
-  name     = "k3s-controller-${count.index + 1}"
-  image    = var.instance_image
-  profiles = [incus_profile.k3s.name]
-
-  config = {
-    "boot.autostart" = true
-  }
-}
-
-# K3s worker nodes
-resource "incus_instance" "k3s_worker" {
-  count    = var.worker_count
-  name     = "k3s-worker-${count.index + 1}"
-  image    = var.instance_image
-  profiles = [incus_profile.k3s.name]
-
-  config = {
-    "boot.autostart" = true
-  }
+  cluster_name    = var.cluster_name
+  cluster_vip     = var.cluster_vip
+  cp_ips          = module.incus.cp_ips
+  worker_ips      = module.incus.worker_ips
+  cp_count        = var.cp_count
+  worker_count    = var.worker_count
+  kubeconfig_path = "${path.module}/kubeconfig.yaml"
 }

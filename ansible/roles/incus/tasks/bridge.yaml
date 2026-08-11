@@ -1,0 +1,30 @@
+---
+# Configures a Linux bridge (br0) on the host using netplan.
+# After this task runs, all Incus VMs attached to br0 will receive IPs
+# directly from the home router's DHCP server — not from Incus.
+
+- name: Deploy bridge netplan configuration
+  become: true
+  ansible.builtin.template:
+    src: bridge.yaml.j2
+    dest: /etc/netplan/60-incus-bridge.yaml
+    mode: '0600'
+  notify: Apply netplan
+
+- name: Find existing netplan config files
+  ansible.builtin.find:
+    paths: /etc/netplan
+    patterns: "*.yaml,*.yml"
+    excludes: "60-incus-bridge.yaml"
+  register: netplan_files
+
+# The physical interface must not have its own DHCP lease once it becomes a
+# bridge port. The bridge (br0) takes over the DHCP lease from the router.
+- name: Disable DHCP on physical interface in existing netplan configs
+  become: true
+  ansible.builtin.replace:
+    path: "{{ item.path }}"
+    regexp: '(\s+dhcp4:\s+true)'
+    replace: '\1  # Disabled — DHCP moved to {{ incus_bridge_name }} (see 60-incus-bridge.yaml)'
+  loop: "{{ netplan_files.files }}"
+  notify: Apply netplan
