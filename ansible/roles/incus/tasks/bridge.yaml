@@ -1,7 +1,25 @@
 ---
 # Configures a Linux bridge (br0) on the host using netplan.
-# After this task runs, all Incus VMs attached to br0 will receive IPs
-# directly from the home router's DHCP server — not from Incus.
+# After this task runs, the host is reachable at {{ incus_bridge_ip }}.
+# Incus VMs attached to br0 receive IPs from the home router's DHCP server.
+
+# Prevent cloud-init from regenerating 50-cloud-init.yaml on future reboots.
+- name: Disable cloud-init network configuration
+  become: true
+  ansible.builtin.copy:
+    dest: /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    content: |
+      # Managed by Ansible — disables cloud-init network reconfiguration.
+      network: {config: disabled}
+    mode: '0644'
+
+# Remove the cloud-init managed netplan file to avoid conflicting bridge definitions.
+- name: Remove cloud-init managed netplan file
+  become: true
+  ansible.builtin.file:
+    path: /etc/netplan/50-cloud-init.yaml
+    state: absent
+  notify: Apply netplan
 
 - name: Deploy bridge netplan configuration
   become: true
@@ -18,8 +36,7 @@
     excludes: "60-incus-bridge.yaml"
   register: netplan_files
 
-# The physical interface must not have its own DHCP lease once it becomes a
-# bridge port. The bridge (br0) takes over the DHCP lease from the router.
+# The physical interface must not have its own DHCP lease once it becomes a bridge port.
 - name: Disable DHCP on physical interface in existing netplan configs
   become: true
   ansible.builtin.replace:

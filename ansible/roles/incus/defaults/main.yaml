@@ -8,9 +8,16 @@ incus_storage_pool_name: "default"
 incus_storage_pool_driver: "zfs"
 incus_zfs_pool_device: ""  # Leave empty for loop-backed file. Set to e.g. /dev/sdb for dedicated device.
 
-# Network bridge — VMs attach to br0 and get IPs from the home router via DHCP
+# Network bridge — host bridge setup
 incus_bridge_name: "br0"
 incus_bridge_parent_interface: "enp0s31f6"
+
+# Bridge static IP — the physical host is always reachable at this address.
+# VMs attached to br0 still get their IPs from the router's DHCP server.
+incus_bridge_ip: "192.168.18.100"
+incus_bridge_prefix: "24"
+incus_bridge_gateway: "192.168.18.1"
+incus_bridge_dns: ["8.8.8.8", "1.1.1.1"]
 
 # Client config
 incus_remote_name: "homelab"
