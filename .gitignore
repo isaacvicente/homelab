@@ -1,13 +1,9 @@
-# OpenTofu provider cache and state
-opentofu/.terraform/
-opentofu/terraform.tfstate
-opentofu/terraform.tfstate.backup
+# Talos generated credentials and configs — never commit
+talos/secrets.yaml
+talos/controlplane.yaml
+talos/worker.yaml
+talos/talosconfig
 
-# Variable values and generated credentials — never commit these
-opentofu/terraform.tfvars
-opentofu/kubeconfig.yaml
-opentofu/talosconfig.yaml
-
-# Ansible inventory and secrets
-ansible/inventory/inventory.ini
-ansible/group_vars/all/vault.yaml
+# Local kubeconfig copies
+*.kubeconfig
+kubeconfig.yaml

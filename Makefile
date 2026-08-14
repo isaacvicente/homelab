@@ -1,56 +1,64 @@
 .DEFAULT_GOAL := help
 
-ANSIBLE_DIR := ansible
-TOFU_DIR    := opentofu
+TALOS_DIR     := talos
+NODE_IP       := 192.168.18.100
+CLUSTER_NAME  := homelab
+TALOS_VERSION := v1.10.0
 
-# MinIO credentials — set as env var MINIO_PASS
-MINIO_HOST ?= $(shell grep -E '^[0-9]' $(ANSIBLE_DIR)/inventory/inventory.ini 2>/dev/null | awk '{print $$1}' | head -1)
-MINIO_USER ?= minioadmin
-MINIO_PASS ?= $(error MINIO_PASS is not set. Run: export MINIO_PASS=<your-minio-password>)
-
-.PHONY: help setup init plan apply destroy kubeconfig schematic vault-create
+.PHONY: help iso secrets generate apply bootstrap kubeconfig reset
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 	  sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-setup: ## Run Ansible — configure host (MinIO .deb + Incus + bridge + ZFS)
-	cd $(ANSIBLE_DIR) && ansible-playbook setup.yaml --ask-vault-pass
+iso: ## Print link to download Talos ISO for baremetal
+	@echo "Download the Talos ISO for baremetal (metal-amd64.iso) from:"
+	@echo "  https://factory.talos.dev/?version=$(TALOS_VERSION)"
+	@echo ""
+	@echo "Flash to USB:"
+	@echo "  sudo dd if=metal-amd64.iso of=/dev/sdX bs=4M status=progress && sync"
 
-init: ## Initialize OpenTofu with MinIO remote backend
-	cd $(TOFU_DIR) && tofu init \
-	  -backend-config="endpoint=http://$(MINIO_HOST):9000" \
-	  -backend-config="access_key=$(MINIO_USER)" \
-	  -backend-config="secret_key=$(MINIO_PASS)" \
-	  -reconfigure
+secrets: ## Generate cluster secrets (run once — output is gitignored)
+	@mkdir -p $(TALOS_DIR)
+	talosctl gen secrets --output-file $(TALOS_DIR)/secrets.yaml
 
-plan: ## Preview infrastructure changes
-	cd $(TOFU_DIR) && tofu plan
+generate: ## Generate machine config from secrets + patches
+	talosctl gen config $(CLUSTER_NAME) https://$(NODE_IP):6443 \
+	  --with-secrets $(TALOS_DIR)/secrets.yaml \
+	  --config-patch-control-plane @$(TALOS_DIR)/patches/controlplane.yaml \
+	  --config-patch @$(TALOS_DIR)/patches/install.yaml \
+	  --output $(TALOS_DIR)/ \
+	  --force
+	@echo ""
+	@echo "Generated: $(TALOS_DIR)/controlplane.yaml, $(TALOS_DIR)/talosconfig"
 
-apply: ## Provision VMs + bootstrap Kubernetes cluster
-	cd $(TOFU_DIR) && tofu apply
+apply: ## Apply machine config to node (use --insecure on first boot)
+	talosctl apply-config \
+	  --talosconfig $(TALOS_DIR)/talosconfig \
+	  --nodes $(NODE_IP) \
+	  --file $(TALOS_DIR)/controlplane.yaml \
+	  --insecure
 
-destroy: ## Destroy all Incus VMs (does not affect host config)
-	cd $(TOFU_DIR) && tofu destroy
+bootstrap: ## Bootstrap etcd (run once after node reboots with config applied)
+	talosctl bootstrap \
+	  --talosconfig $(TALOS_DIR)/talosconfig \
+	  --nodes $(NODE_IP)
 
-kubeconfig: ## Copy kubeconfig to ~/.kube/homelab.yaml
+kubeconfig: ## Fetch kubeconfig and merge into ~/.kube/homelab.yaml
 	@mkdir -p ~/.kube
-	cp $(TOFU_DIR)/kubeconfig.yaml ~/.kube/homelab.yaml
+	talosctl kubeconfig ~/.kube/homelab.yaml \
+	  --talosconfig $(TALOS_DIR)/talosconfig \
+	  --nodes $(NODE_IP) \
+	  --merge
 	@chmod 600 ~/.kube/homelab.yaml
 	@echo ""
-	@echo "Cluster is ready. Run:"
+	@echo "Cluster ready. Run:"
 	@echo "  export KUBECONFIG=~/.kube/homelab.yaml"
-	@echo "  kubectl get nodes"
+	@echo "  kubectl get nodes -o wide"
 
-schematic: ## Instructions for generating Talos schematic ID
-	@echo ""
-	@echo "  1. Open: https://factory.talos.dev"
-	@echo "  2. Under 'System Extensions', add: siderolabs/qemu-guest-agent"
-	@echo "  3. Click 'Generate'"
-	@echo "  4. Copy the schematic ID into opentofu/terraform.tfvars:"
-	@echo "       talos_schematic_id = \"<paste-id-here>\""
-	@echo ""
-
-vault-create: ## Create Ansible Vault file for MinIO credentials
-	@mkdir -p $(ANSIBLE_DIR)/group_vars/all
-	ansible-vault create $(ANSIBLE_DIR)/group_vars/all/vault.yaml
+reset: ## Factory reset the node (DESTRUCTIVE — wipes disk and reinstalls)
+	talosctl reset \
+	  --talosconfig $(TALOS_DIR)/talosconfig \
+	  --nodes $(NODE_IP) \
+	  --graceful=false \
+	  --reboot

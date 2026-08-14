@@ -1,5 +1,0 @@
-minio_root_user: "minioadmin"
-minio_root_password: "change_me_use_a_strong_password"
-# Pin the version — update deliberately, not automatically on every Ansible run.
-# Check https://github.com/minio/minio/releases for release tags.
-minio_version: "RELEASE.2024-11-07T00-52-20Z"
