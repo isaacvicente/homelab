@@ -6,7 +6,7 @@ This document is the authoritative guide for AI coding agents operating on this 
 
 ## 1. System Architecture Overview
 
-This repository configures a single-node baremetal Kubernetes homelab on a physical **Dell Optiplex 7050** host running **Talos Linux** with **Flux CD GitOps** and **Longhorn Storage**.
+This repository configures a single-node baremetal Kubernetes homelab on a physical **Dell Optiplex 7050** host running **Talos Linux** with **Flux CD GitOps**, **Longhorn Storage**, and **Tailscale Operator** for secure remote access.
 
 ```
 Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192.168.18.100/24)
@@ -26,9 +26,10 @@ Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192
 │   ├── Default Flannel CNI
 │   └── Kube API Endpoint: https://192.168.18.100:6443
 │
-└── GitOps & Storage (Flux CD)
+└── GitOps & Core Workloads (Flux CD)
     ├── Flux CD Controllers         (Auto-reconciliation from kubernetes/ directory)
-    └── Longhorn Storage Engine     (Single-node configured: defaultReplicaCount: 1)
+    ├── Longhorn Storage Engine     (Single-node configured: defaultReplicaCount: 1)
+    └── Tailscale Operator          (Remote HTTPS MagicDNS endpoints & subnet router)
 ```
 
 ---
@@ -53,12 +54,20 @@ homelab/
     │   └── kustomization.yaml
     └── apps/
         ├── kustomization.yaml         # App aggregator
-        └── storage/
+        ├── storage/
+        │   ├── kustomization.yaml
+        │   └── longhorn/
+        │       ├── namespace.yaml
+        │       ├── helmrepository.yaml
+        │       ├── helmrelease.yaml   # Single-node replica=1 settings
+        │       └── kustomization.yaml
+        └── network/
             ├── kustomization.yaml
-            └── longhorn/
+            └── tailscale/
                 ├── namespace.yaml
                 ├── helmrepository.yaml
-                ├── helmrelease.yaml   # Single-node replica=1 settings
+                ├── helmrelease.yaml   # Tailscale Operator
+                ├── oauth-secret.sops.yaml.example
                 └── kustomization.yaml
 ```
 
@@ -78,6 +87,7 @@ When modifying this codebase, AI agents **must strictly adhere** to the followin
 
 ### Guardrail 3 — Secrets via SOPS + age
 - Cluster PKI secrets must live in `talos/talsecret.sops.yaml` encrypted with SOPS and `age`.
+- Application secrets (e.g. Tailscale OAuth credentials) must be encrypted via SOPS in `kubernetes/apps/**/secret.sops.yaml`.
 - Never commit unencrypted private age keys (`keys.txt`), raw certificates, or plaintext cluster secrets.
 
 ### Guardrail 4 — Single-Node Scheduling & Longhorn Constraints
@@ -99,7 +109,6 @@ Before submitting code modifications, AI agents **must** verify:
 ```bash
 # 1. Check YAML syntax across talos/ and kubernetes/
 python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('talos/*.yaml') + glob.glob('kubernetes/**/*.yaml', recursive=True)]"
-
 
 # 2. Check Makefile targets
 make help

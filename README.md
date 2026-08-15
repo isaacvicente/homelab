@@ -2,7 +2,7 @@
 
 A production-grade, declarative, single-node baremetal Kubernetes homelab on a **Dell Optiplex 7050** physical host.
 
-**Stack:** Talos Linux · `talhelper` · SOPS + `age` · Flannel CNI · Flux CD (GitOps) · Longhorn Storage
+**Stack:** Talos Linux · `talhelper` · SOPS + `age` · Flannel CNI · Flux CD (GitOps) · Longhorn Storage · Tailscale Operator
 
 ---
 
@@ -26,9 +26,10 @@ Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs)
 │   ├── talhelper                   (talos/talconfig.yaml)
 │   └── SOPS + age                  (talos/talsecret.sops.yaml)
 │
-└── GitOps & Storage Layer
+└── GitOps & Core Workloads
     ├── Flux CD                     (Automated reconciliation from kubernetes/apps/)
-    └── Longhorn Storage Engine     (Single-node: defaultReplicaCount=1)
+    ├── Longhorn Storage Engine     (Single-node: defaultReplicaCount=1)
+    └── Tailscale Operator          (Remote access via private HTTPS MagicDNS)
 ```
 
 ---
@@ -95,7 +96,7 @@ make kubeconfig
 
 ---
 
-### 5. Bootstrap Flux CD & Deploy Longhorn Storage
+### 5. Bootstrap Flux CD, Longhorn & Tailscale Operator
 
 ```bash
 export KUBECONFIG=~/.kube/homelab.yaml
@@ -105,7 +106,28 @@ kubectl get nodes -o wide
 make flux-init
 ```
 
-Flux will automatically connect to this GitHub repository and reconcile all manifests in `kubernetes/apps/`, installing **Longhorn** configured for your single node!
+Flux will automatically connect to this GitHub repository and reconcile all manifests in `kubernetes/apps/`, deploying:
+- **Longhorn Storage**: Single-node persistent volume storage (`defaultReplicaCount: 1`).
+- **Tailscale Operator**: Deployed in `network` namespace.
+
+---
+
+### 6. Connect Tailscale for Remote Access (Optional)
+
+1. Create a Tailscale OAuth Client at [login.tailscale.com/admin/settings/oauth](https://login.tailscale.com/admin/settings/oauth) with scope: `Devices (Read & Write)`.
+2. Create the OAuth secret in Kubernetes:
+   ```bash
+   kubectl create secret generic operator-oauth -n network \
+     --from-literal=client_id="<YOUR_CLIENT_ID>" \
+     --from-literal=client_secret="<YOUR_CLIENT_SECRET>"
+   ```
+3. To expose any service with an automatic private HTTPS domain (e.g. Longhorn UI or Home Assistant), simply annotate its Service:
+   ```yaml
+   metadata:
+     annotations:
+       tailscale.com/expose: "true"
+       tailscale.com/hostname: "longhorn"
+   ```
 
 ---
 
@@ -127,8 +149,10 @@ homelab/
     ├── flux-system/                   # Flux synchronization manifests
     └── apps/
         ├── kustomization.yaml         # App aggregator
-        └── storage/
-            └── longhorn/              # Longhorn Storage (single-node replica=1)
+        ├── storage/
+        │   └── longhorn/              # Longhorn Storage (single-node replica=1)
+        └── network/
+            └── tailscale/             # Tailscale Operator (remote access)
 ```
 
 ---
