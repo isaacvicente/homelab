@@ -37,15 +37,24 @@ generate: ## Generate Talos machine configs from talconfig.yaml + talsecret.sops
 	@echo ""
 	@echo "Generated machine configs in $(TALOS_DIR)/clusterconfig/"
 
-apply: ## Apply generated config to node in maintenance mode (triggers install to disk)
-	talhelper gencommand apply -c $(TALOS_DIR)/talconfig.yaml -o $(TALOS_DIR)/clusterconfig --insecure | bash
+apply: ## Apply generated config to baremetal node in maintenance mode (installs to disk)
+	talosctl apply-config \
+	  --insecure \
+	  --nodes $(NODE_IP) \
+	  --file $(TALOS_DIR)/clusterconfig/homelab-homelab.yaml
 
-bootstrap: ## Bootstrap etcd on the node
-	talhelper gencommand bootstrap -c $(TALOS_DIR)/talconfig.yaml -o $(TALOS_DIR)/clusterconfig | bash
+bootstrap: ## Bootstrap etcd on the baremetal node
+	talosctl bootstrap \
+	  --talosconfig $(TALOS_DIR)/clusterconfig/talosconfig \
+	  --nodes $(NODE_IP)
 
 kubeconfig: ## Fetch and merge admin kubeconfig to ~/.kube/homelab.yaml
 	@mkdir -p ~/.kube
-	talhelper gencommand kubeconfig -c $(TALOS_DIR)/talconfig.yaml -o $(TALOS_DIR)/clusterconfig | bash
+	talosctl kubeconfig ~/.kube/homelab.yaml \
+	  --talosconfig $(TALOS_DIR)/clusterconfig/talosconfig \
+	  --nodes $(NODE_IP) \
+	  --merge
+	@chmod 600 ~/.kube/homelab.yaml
 	@echo ""
 	@echo "Cluster is ready. Run:"
 	@echo "  export KUBECONFIG=~/.kube/homelab.yaml"
