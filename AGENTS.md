@@ -1,30 +1,35 @@
 # AGENTS.md — Repository Guide for AI Agents
 
-This document is the authoritative guide for AI coding agents and automated tools operating on this codebase. It documents the single-node baremetal Talos Linux homelab architecture, directory layout, core design decisions, operational constraints, and verification protocols.
+This document is the authoritative guide for AI coding agents operating on this repository. It defines the single-node baremetal Talos Linux homelab architecture, directory layout, core design decisions, operational constraints, and verification protocols.
 
 ---
 
 ## 1. System Architecture Overview
 
-This project configures a single-node baremetal Kubernetes homelab on a physical host running **Talos Linux**.
+This repository configures a single-node baremetal Kubernetes homelab on a physical **Dell Optiplex 7050** host running **Talos Linux** with **Flux CD GitOps** and **Longhorn Storage**.
 
 ```
-Physical Host (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192.168.18.100/24)
+Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192.168.18.100/24)
 │
-├── NIC (enp0s31f6 — static IP: 192.168.18.100/24, gateway: 192.168.18.1)
-├── Disk (/dev/sda or /dev/nvme0n1)
+├── Hardware Extensions (Talos Image Factory via talhelper)
+│   ├── siderolabs/intel-ucode      (Intel 6th/7th Gen CPU stability)
+│   ├── siderolabs/i915-ucode       (Intel HD 530/630 QuickSync for Plex)
+│   ├── siderolabs/iscsi-tools      (Longhorn CSI prerequisite)
+│   └── siderolabs/util-linux-tools (fstrim for SSDs + CSI filesystem tools)
 │
-└── Kubernetes (Single-Node: Controlplane + Worker roles)
-    ├── allowSchedulingOnControlPlanes: true
-    ├── Default Flannel CNI
-    └── Kube API Endpoint: https://192.168.18.100:6443
+├── Automation & Secret Layer
+│   ├── talhelper                   (Single declarative talos/talconfig.yaml)
+│   └── SOPS + age                  (Encrypted secrets: talos/talsecret.sops.yaml)
+│
+├── Kubernetes (Single Node: Controlplane + Worker roles)
+│   ├── allowSchedulingOnControlPlanes: true
+│   ├── Default Flannel CNI
+│   └── Kube API Endpoint: https://192.168.18.100:6443
+│
+└── GitOps & Storage (Flux CD)
+    ├── Flux CD Controllers         (Auto-reconciliation from kubernetes/ directory)
+    └── Longhorn Storage Engine     (Single-node configured: defaultReplicaCount: 1)
 ```
-
-### Key Capabilities & Components
-- **OS & Cluster Bootstrap**: Talos Linux (immutable, API-driven, security-focused Kubernetes OS).
-- **Tooling**: Pure `talosctl` workflow orchestrated via `Makefile` — no Ansible, no Incus, no OpenTofu.
-- **Single-Node Scheduling**: Configured with `allowSchedulingOnControlPlanes: true` so application pods (Home Assistant, Plex, local storage) run seamlessly on the single physical node.
-- **CNI**: Flannel (built-in default CNI in Talos; requires zero extra configuration).
 
 ---
 
@@ -32,17 +37,29 @@ Physical Host (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192.168.
 
 ```
 homelab/
-├── AGENTS.md                 # This document (AI Agent guide)
-├── Makefile                  # talosctl workflow automation targets
-├── README.md                 # Human-facing documentation
-├── .gitignore                # Git exclusion rules (secrets, configs, kubeconfigs)
-└── talos/
-    ├── patches/
-    │   ├── controlplane.yaml # Static IP, allow-scheduling, hostname, DNS
-    │   └── install.yaml      # Target disk (/dev/sda) & wipe settings
-    ├── secrets.yaml          # Gitignored — generated cluster PKI & secrets
-    ├── controlplane.yaml     # Gitignored — generated machine configuration
-    └── talosconfig           # Gitignored — client config for talosctl
+├── AGENTS.md                          # This document (AI Agent guide)
+├── Makefile                           # talhelper & Flux automation targets
+├── README.md                          # Human-facing documentation
+├── .sops.yaml                         # SOPS encryption rules (age public key)
+├── .gitignore                         # Exclusions (unencrypted private keys, clusterconfig)
+│
+├── talos/                             # Talos OS machine configuration
+│   ├── talconfig.yaml                 # Declarative source of truth for Talos
+│   └── talsecret.sops.yaml            # SOPS-encrypted cluster PKI & secrets (safe in Git)
+│
+└── kubernetes/                        # Flux CD GitOps tree
+    ├── flux-system/
+    │   ├── gotk-sync.yaml             # Flux sync definition
+    │   └── kustomization.yaml
+    └── apps/
+        ├── kustomization.yaml         # App aggregator
+        └── storage/
+            ├── kustomization.yaml
+            └── longhorn/
+                ├── namespace.yaml
+                ├── helmrepository.yaml
+                ├── helmrelease.yaml   # Single-node replica=1 settings
+                └── kustomization.yaml
 ```
 
 ---
@@ -51,33 +68,38 @@ homelab/
 
 When modifying this codebase, AI agents **must strictly adhere** to the following guardrails:
 
-### Guardrail 1 — Baremetal Direct (No Hypervisors or Host VMs)
+### Guardrail 1 — Baremetal Direct (No Hypervisors or VMs)
 - Talos Linux runs directly on the baremetal hardware as the host OS.
-- **Do not** introduce hypervisors, Incus, Proxmox, or Docker/VM layers to run Talos.
+- **Do not** introduce hypervisors, Incus, Proxmox, OpenTofu, or Docker/VM layers to run Talos.
 
-### Guardrail 2 — Config Patches Only (Do Not Commit Generated Configs)
-- All cluster customizations must live in `talos/patches/*.yaml`.
-- Generated files (`talos/secrets.yaml`, `talos/controlplane.yaml`, `talos/talosconfig`) contain PKI tokens/keys and are **strictly gitignored**.
+### Guardrail 2 — Declarative talhelper Configuration Only
+- All Talos node definitions, hardware extensions, disk install targets, and network interfaces must be maintained in `talos/talconfig.yaml`.
+- Generated files in `talos/clusterconfig/` contain machine configurations and talosconfigs; they are **strictly gitignored**.
 
-### Guardrail 3 — Single-Node Workload Support
-- The control plane patch must include `allowSchedulingOnControlPlanes: true` under `cluster:`, as there are no separate worker nodes.
+### Guardrail 3 — Secrets via SOPS + age
+- Cluster PKI secrets must live in `talos/talsecret.sops.yaml` encrypted with SOPS and `age`.
+- Never commit unencrypted private age keys (`keys.txt`), raw certificates, or plaintext cluster secrets.
 
-### Guardrail 4 — Use Default Flannel CNI
+### Guardrail 4 — Single-Node Scheduling & Longhorn Constraints
+- The control plane configuration must include `allowSchedulingOnControlPlanes: true`.
+- Longhorn must be configured with `defaultSettings.defaultReplicaCount: 1` since only one physical node exists.
+
+### Guardrail 5 — Built-in Flannel CNI
 - Flannel is the default CNI provided by Talos Linux. It requires zero extra patches or Helm charts.
 
-### Guardrail 5 — Separation of Workload Management
-- This repository is responsible **strictly** for OS machine configuration, etcd bootstrap, and generating client credentials (`kubeconfig` / `talosconfig`).
-- Application workloads, GitOps operators (ArgoCD/Flux), and Helm charts belong in a dedicated Kubernetes manifests repository or post-bootstrap GitOps pipeline.
+### Guardrail 6 — Flux CD for Kubernetes Workloads
+- All Kubernetes applications, CRDs, namespaces, and Helm charts belong in `kubernetes/apps/` and must be declared as Flux `Kustomization` or `HelmRelease` manifests.
 
 ---
 
 ## 4. Verification & Testing Commands
 
-Before submitting any code modifications, AI agents **must** verify:
+Before submitting code modifications, AI agents **must** verify:
 
 ```bash
-# 1. Check YAML syntax of all patch files
-python3 -c "import yaml, glob; [yaml.safe_load(open(f)) for f in glob.glob('talos/patches/*.yaml')]"
+# 1. Check YAML syntax across talos/ and kubernetes/
+python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('talos/*.yaml') + glob.glob('kubernetes/**/*.yaml', recursive=True)]"
+
 
 # 2. Check Makefile targets
 make help
@@ -87,10 +109,5 @@ make help
 
 ## 5. Security & Git Hygiene
 
-- **Sensitive Files**: Never commit secrets, credentials, or generated machine configs. The following are gitignored:
-  - `talos/secrets.yaml`
-  - `talos/controlplane.yaml`
-  - `talos/worker.yaml`
-  - `talos/talosconfig`
-  - `*.kubeconfig`
-  - `kubeconfig.yaml`
+- Tracked safely in Git: `.sops.yaml`, `talos/talconfig.yaml`, `talos/talsecret.sops.yaml` (encrypted).
+- Strictly gitignored: `talos/clusterconfig/`, `*.kubeconfig`, `kubeconfig.yaml`, `keys.txt`.

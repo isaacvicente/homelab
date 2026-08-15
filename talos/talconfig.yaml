@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/budimanjojo/talhelper/master/pkg/config/schemas/talconfig.json
+clusterName: homelab
+talosVersion: v1.10.0
+kubernetesVersion: v1.32.0
+endpoint: https://192.168.18.100:6443
+
+cniConfig:
+  name: none # Uses Talos default Flannel
+
+nodes:
+  - hostname: homelab
+    ipAddress: 192.168.18.100
+    controlPlane: true
+    installDisk: /dev/sda
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/intel-ucode
+            - siderolabs/i915-ucode
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+    networkInterfaces:
+      - interface: enp0s31f6
+        addresses:
+          - 192.168.18.100/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.18.1
+        dhcp: false
+    nameservers:
+      - 8.8.8.8
+      - 1.1.1.1
+
+controlPlane:
+  patches:
+    - |-
+      cluster:
+        allowSchedulingOnControlPlanes: true

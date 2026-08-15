@@ -1,0 +1,32 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: storage
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: longhorn
+      version: 1.8.x
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: storage
+  install:
+    remediation:
+      retries: 3
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    defaultSettings:
+      # CRITICAL FOR SINGLE-NODE: default replica count must be 1
+      defaultReplicaCount: 1
+      replicaAutoBalance: disabled
+      storageOverProvisioningPercentage: 100
+      storageMinimalAvailablePercentage: 15
+      orphanAutoDeletion: true
+    persistence:
+      defaultClass: true
+      defaultClassReplicaCount: 1

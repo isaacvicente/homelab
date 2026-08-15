@@ -1,122 +1,147 @@
-# Homelab — Single-Node Baremetal Talos Linux
+# Homelab — Baremetal Talos Linux with talhelper & Flux CD
 
-A single-node baremetal Kubernetes homelab running [Talos Linux](https://www.talos.dev/) directly on physical hardware.
+A production-grade, declarative, single-node baremetal Kubernetes homelab on a **Dell Optiplex 7050** physical host.
 
-**Stack:** Talos Linux · Flannel CNI · `talosctl` · Local Storage
+**Stack:** Talos Linux · `talhelper` · SOPS + `age` · Flannel CNI · Flux CD (GitOps) · Longhorn Storage
 
 ---
 
 ## Architecture
 
 ```
-Physical Host (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs)
+Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs)
 │
-├── NIC (enp0s31f6 — Static IP: 192.168.18.100/24, Gateway: 192.168.18.1)
-├── Disk (/dev/sda — wiped and provisioned directly by Talos)
+├── Hardware Extensions (Talos Image Factory via talhelper)
+│   ├── siderolabs/intel-ucode      (Intel 6th/7th Gen CPU stability)
+│   ├── siderolabs/i915-ucode       (Intel HD 530/630 QuickSync for Plex)
+│   ├── siderolabs/iscsi-tools      (Longhorn CSI support)
+│   └── siderolabs/util-linux-tools (fstrim for SSDs + filesystem tools)
 │
-└── Kubernetes (Single Node: Controlplane + Worker roles)
-    ├── allowSchedulingOnControlPlanes: true
-    ├── Default Flannel CNI
-    └── Kube API Endpoint: https://192.168.18.100:6443
+├── Network & OS Layer
+│   ├── Static IP: 192.168.18.100/24 (enp0s31f6, Gateway: 192.168.18.1)
+│   ├── Hostname: homelab
+│   └── Flannel CNI (built-in default)
+│
+├── Automation & Secrets
+│   ├── talhelper                   (talos/talconfig.yaml)
+│   └── SOPS + age                  (talos/talsecret.sops.yaml)
+│
+└── GitOps & Storage Layer
+    ├── Flux CD                     (Automated reconciliation from kubernetes/apps/)
+    └── Longhorn Storage Engine     (Single-node: defaultReplicaCount=1)
 ```
-
-- **Baremetal Immutable OS**: No host Ubuntu OS, no Incus, no virtualization overhead. The entire 32 GB RAM and 8 vCPUs are available to Kubernetes workloads.
-- **Single-Node Scheduling**: `allowSchedulingOnControlPlanes: true` allows all your home workloads (Home Assistant, Plex, storage, etc.) to run on the single control-plane node.
-- **Flannel CNI**: Talos default built-in CNI requiring zero configuration.
 
 ---
 
 ## Prerequisites
 
-On your **workstation / laptop**:
+On your **development machine**:
 - `talosctl` (e.g. `curl -sL https://talos.dev/install | sh`)
+- `talhelper` (e.g. `brew install budimanjojo/tap/talhelper` or `go install github.com/budimanjojo/talhelper@latest`)
+- `sops` (e.g. `brew install sops`)
+- `age` (e.g. `brew install age`)
+- `flux` (e.g. `brew install fluxcd/tap/flux`)
 - `kubectl`
-- `make`
-- A USB drive to flash the Talos baremetal ISO
 
 ---
 
-## Installation & Bootstrap Workflow
+## Quick Start & Deployment Workflow
 
-### 1. Download & Flash the Talos ISO
+### 1. Initialize Age Encryption Key
 
-Generate the baremetal ISO link:
 ```bash
-make iso
+make age-key
 ```
-Download `metal-amd64.iso` from [factory.talos.dev](https://factory.talos.dev) and flash to your USB drive using Balena Etcher or `dd`:
+This generates `~/.config/sops/age/keys.txt` (if not already present) and displays your public key. Paste your public key into `.sops.yaml`.
+
+---
+
+### 2. Generate Cluster Secrets & Machine Configurations
+
 ```bash
-sudo dd if=metal-amd64.iso of=/dev/sdX bs=4M status=progress && sync
-```
-
-### 2. Boot the Physical Machine from USB
-
-Plug the USB into the physical server and boot from it. Talos will start in **maintenance mode** and obtain a temporary DHCP IP (or listen on default interfaces).
-
-### 3. Generate Cluster Secrets & Machine Config
-
-From your workstation:
-```bash
-# Generate cluster PKI secrets (gitignored)
+# 1. Generate & encrypt cluster secrets
 make secrets
 
-# Generate controlplane.yaml with your custom network/install patches
+# 2. Generate machine configs (talos/clusterconfig/)
 make generate
 ```
 
-> [!TIP]
-> If your server uses an NVMe disk instead of SATA/SAS, edit `talos/patches/install.yaml` to set `disk: /dev/nvme0n1` before generating configs.
+---
 
-### 4. Apply Configuration to the Node
+### 3. Flash Talos ISO to USB & Boot Server
 
-Push the configuration over the network to the server:
+1. Download the baremetal Talos ISO from [factory.talos.dev](https://factory.talos.dev) or use your schematic URL from `talos/talconfig.yaml`.
+2. Flash to USB:
+   ```bash
+   sudo dd if=metal-amd64.iso of=/dev/sdX bs=4M status=progress && sync
+   ```
+3. Boot the Dell Optiplex 7050 from the USB into **maintenance mode**.
+
+---
+
+### 4. Install Talos & Bootstrap Kubernetes
+
+From your development machine:
 ```bash
+# Push machine configuration (formats disk & installs Talos):
 make apply
-```
-Talos will format the target disk, install the OS, reboot into the installed system, and configure static IP `192.168.18.100`.
 
-### 5. Bootstrap etcd & Fetch Kubeconfig
-
-Once the server boots from disk:
-```bash
-# Bootstrap the single-node etcd cluster (run once)
+# After the server reboots into Talos, bootstrap etcd:
 make bootstrap
 
-# Fetch admin kubeconfig to ~/.kube/homelab.yaml
+# Fetch administrative kubeconfig:
 make kubeconfig
 ```
 
-### 6. Verify the Cluster
+---
+
+### 5. Bootstrap Flux CD & Deploy Longhorn Storage
 
 ```bash
 export KUBECONFIG=~/.kube/homelab.yaml
 kubectl get nodes -o wide
-kubectl get pods -A
+
+# Bootstrap Flux CD GitOps engine:
+make flux-init
 ```
+
+Flux will automatically connect to this GitHub repository and reconcile all manifests in `kubernetes/apps/`, installing **Longhorn** configured for your single node!
 
 ---
 
-## Project Structure
+## Repository Structure
 
 ```
 homelab/
-├── AGENTS.md                 # AI agent operating instructions & architecture guide
-├── Makefile                  # talosctl workflow targets (secrets, generate, apply, bootstrap, kubeconfig)
-├── README.md                 # Project documentation
-├── .gitignore                # Git exclusions (secrets, machine configs, kubeconfigs)
-└── talos/
-    └── patches/
-        ├── controlplane.yaml # Static IP (192.168.18.100), hostname, allowSchedulingOnControlPlanes
-        └── install.yaml      # Target disk (/dev/sda) & wipe setting
+├── AGENTS.md                          # AI agent architectural guide
+├── Makefile                           # Workflow targets (secrets, generate, apply, bootstrap, etc.)
+├── README.md                          # Documentation
+├── .sops.yaml                         # SOPS encryption rules
+├── .gitignore                         # Secret & generated cache exclusions
+│
+├── talos/
+│   ├── talconfig.yaml                 # Single declarative source of truth
+│   └── talsecret.sops.yaml            # SOPS-encrypted cluster PKI
+│
+└── kubernetes/                        # Flux CD GitOps tree
+    ├── flux-system/                   # Flux synchronization manifests
+    └── apps/
+        ├── kustomization.yaml         # App aggregator
+        └── storage/
+            └── longhorn/              # Longhorn Storage (single-node replica=1)
 ```
 
 ---
 
-## Maintenance & Operations
+## Operational Commands
 
-| Task | Command | Description |
-|---|---|---|
-| **View Node Status** | `talosctl -n 192.168.18.100 --talosconfig talos/talosconfig dashboard` | Interactive TUI dashboard |
-| **View Node Logs** | `talosctl -n 192.168.18.100 --talosconfig talos/talosconfig dmesg` | Kernel log messages |
-| **Inspect Disks** | `talosctl -n 192.168.18.100 --talosconfig talos/talosconfig disks` | List host disks & partitions |
-| **Factory Reset** | `make reset` | Wipes the disk and restarts in maintenance mode |
+| Command | Description |
+|---|---|
+| `make age-key` | Display or create local `age` encryption key |
+| `make secrets` | Generate & encrypt Talos PKI secrets |
+| `make generate` | Render machine configs via `talhelper` |
+| `make apply` | Apply machine config to node over LAN |
+| `make bootstrap` | Bootstrap single-node etcd cluster |
+| `make kubeconfig` | Fetch admin credentials to `~/.kube/homelab.yaml` |
+| `make flux-init` | Bootstrap Flux CD GitOps engine into cluster |
+| `make reset` | Factory reset the physical server |
