@@ -5,6 +5,9 @@ talos/secrets.yaml
 talos/controlplane.yaml
 talos/worker.yaml
 
+# Unencrypted Talos secrets (pre-SOPS plaintext — NEVER commit)
+talos/talsecret.yaml
+
 # Local credentials & keys — never commit private keys
 *.key
 *.pem

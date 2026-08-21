@@ -1,9 +1,8 @@
+---
 creation_rules:
   - path_regex: talos/.*\.sops\.yaml$
-    key_groups:
-      - age:
-          - age1dummykeyplaceholderforinitialcommit0000000000000000000000000
+    age: >-
+      age1hm8fzvp84xsqwtwc2pjkssqe4us5tzq07fxfcu0spch37ad29auqnkygm5
   - path_regex: kubernetes/.*\.sops\.yaml$
-    key_groups:
-      - age:
-          - age1dummykeyplaceholderforinitialcommit0000000000000000000000000
+    age: >-
+      age1hm8fzvp84xsqwtwc2pjkssqe4us5tzq07fxfcu0spch37ad29auqnkygm5
