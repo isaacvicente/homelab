@@ -39,6 +39,9 @@ Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192
 ```
 homelab/
 ├── AGENTS.md                          # This document (AI Agent guide)
+├── docs/                              # Human-facing documentation
+│   ├── deployment-guide.md            # Full deployment walkthrough
+│   └── tailscale-setup.md             # Tailscale remote access setup
 ├── Makefile                           # talhelper & Flux automation targets
 ├── README.md                          # Human-facing documentation
 ├── .sops.yaml                         # SOPS encryption rules (age public key)
@@ -113,6 +116,8 @@ python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.
 # 2. Check Makefile targets
 make help
 ```
+
+> **Note:** The `make flux-init` target requires a `GITHUB_TOKEN` environment variable (GitHub PAT with repo permissions). The Makefile will abort with a clear error if this is not set.
 
 ---
 

@@ -61,6 +61,12 @@ kubeconfig: ## Fetch and merge admin kubeconfig to ~/.kube/homelab.yaml
 	@echo "  kubectl get nodes -o wide"
 
 flux-init: ## Bootstrap Flux CD into the cluster from this Git repository
+	@if [ -z "$$GITHUB_TOKEN" ]; then \
+	  echo "Error: GITHUB_TOKEN is not set."; \
+	  echo "Export a GitHub PAT with repo permissions:"; \
+	  echo "  export GITHUB_TOKEN=ghp_..."; \
+	  exit 1; \
+	fi
 	@echo "Bootstrapping Flux CD from Git..."
 	flux bootstrap github \
 	  --owner=isaacvicente \
