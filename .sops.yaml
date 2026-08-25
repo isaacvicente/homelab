@@ -4,5 +4,6 @@ creation_rules:
     age: >-
       age1hm8fzvp84xsqwtwc2pjkssqe4us5tzq07fxfcu0spch37ad29auqnkygm5
   - path_regex: kubernetes/.*\.sops\.yaml$
+    encrypted_regex: '^(data|stringData)$'
     age: >-
       age1hm8fzvp84xsqwtwc2pjkssqe4us5tzq07fxfcu0spch37ad29auqnkygm5

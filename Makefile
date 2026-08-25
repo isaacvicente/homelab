@@ -3,7 +3,7 @@
 TALOS_DIR := talos
 NODE_IP   := 192.168.18.100
 
-.PHONY: help age-key secrets generate apply bootstrap kubeconfig flux-init reset
+.PHONY: help age-key secrets generate apply bootstrap kubeconfig sops-secret flux-init reset
 
 help: ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -59,6 +59,17 @@ kubeconfig: ## Fetch and merge admin kubeconfig to ~/.kube/homelab.yaml
 	@echo "Cluster is ready. Run:"
 	@echo "  export KUBECONFIG=~/.kube/homelab.yaml"
 	@echo "  kubectl get nodes -o wide"
+
+sops-secret: ## Create sops-age decryption secret in flux-system from local age key
+	@if [ ! -f ~/.config/sops/age/keys.txt ]; then \
+	  echo "Error: ~/.config/sops/age/keys.txt not found. Run 'make age-key' first."; \
+	  exit 1; \
+	fi
+	@kubectl create secret generic sops-age \
+	  --namespace=flux-system \
+	  --from-file=age.agekey=$$HOME/.config/sops/age/keys.txt \
+	  --dry-run=client -o yaml | kubectl apply -f -
+	@echo "sops-age secret successfully configured in flux-system namespace."
 
 flux-init: ## Bootstrap Flux CD into the cluster from this Git repository
 	@if [ -z "$$GITHUB_TOKEN" ]; then \

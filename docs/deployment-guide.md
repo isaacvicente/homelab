@@ -112,4 +112,4 @@ Flux will:
 This automatically deploys:
 
 - **Longhorn Storage** — single-node persistent volumes (`defaultReplicaCount: 1`)
-- **Tailscale Operator** — see [Tailscale Setup](tailscale-setup.md)
+- **Tailscale Operator** — requires in-cluster SOPS decryption key (`make sops-secret`), see [Tailscale Setup](tailscale-setup.md)

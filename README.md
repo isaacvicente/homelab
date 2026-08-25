@@ -48,6 +48,7 @@ make bootstrap        # 5. Bootstrap etcd
 make kubeconfig       # 6. Fetch kubeconfig
 export GITHUB_TOKEN=ghp_...
 make flux-init        # 7. Bootstrap Flux CD
+make sops-secret      # 8. Inject age decryption key into Flux (for encrypted secrets)
 ```
 
 - **Full walkthrough:** [docs/deployment-guide.md](docs/deployment-guide.md)
