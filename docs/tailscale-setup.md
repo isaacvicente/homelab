@@ -231,6 +231,38 @@ spec:
 
 ---
 
+## Step 7: Access Kubernetes Cluster from Tailscale (`apiServerProxyConfig`)
+
+The HelmRelease is configured with `apiServerProxyConfig.mode: "true"` and `apiServerProxyConfig.allowImpersonation: "true"`.
+
+When enabled, the Tailscale Operator joins your Tailnet as an authenticating reverse proxy for the Kubernetes API server (e.g. named `tailscale-operator`).
+
+### Configure Local `kubectl` Access
+
+From any machine connected to your Tailnet:
+
+1. Use the Tailscale CLI to configure your `kubeconfig`:
+
+```bash
+tailscale configure kubeconfig tailscale-operator
+```
+
+2. Switch to the newly created context:
+
+```bash
+kubectl --context=tailscale-operator get nodes -o wide
+```
+
+3. (Optional) Set as default context:
+
+```bash
+kubectl config use-context tailscale-operator
+```
+
+> **How it works:** Tailscale verifies your Tailscale identity when connecting, intercepts the request, and proxies it to the Kubernetes API server using Kubernetes user impersonation headers (`Impersonate-User`). Standard Kubernetes RBAC applies based on your Tailscale user identity.
+
+---
+
 ## Verification & Troubleshooting
 
 ### Check Flux Decryption & Reconciliation

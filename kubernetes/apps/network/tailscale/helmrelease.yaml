@@ -19,6 +19,10 @@ spec:
   upgrade:
     remediation:
       retries: 3
+  values:
+    apiServerProxyConfig:
+      mode: "true"
+      allowImpersonation: "true"
   valuesFrom:
     - kind: Secret
       name: operator-oauth
