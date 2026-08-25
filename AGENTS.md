@@ -52,9 +52,8 @@ homelab/
 │   └── talsecret.sops.yaml            # SOPS-encrypted cluster PKI & secrets (safe in Git)
 │
 └── kubernetes/                        # Flux CD GitOps tree
-    ├── flux-system/
-    │   ├── gotk-sync.yaml             # Flux sync definition
-    │   └── kustomization.yaml
+    ├── kustomization.yaml             # Top-level aggregator (flux-system + apps)
+    ├── flux-system/                   # Flux-managed (created by flux bootstrap)
     └── apps/
         ├── kustomization.yaml         # App aggregator
         ├── storage/
