@@ -6,3 +6,4 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - oauth-secret.sops.yaml
+  - rbac.yaml
