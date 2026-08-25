@@ -72,7 +72,7 @@ flux-init: ## Bootstrap Flux CD into the cluster from this Git repository
 	  --owner=isaacvicente \
 	  --repository=homelab \
 	  --branch=main \
-	  --path=kubernetes/flux-system \
+	  --path=kubernetes \
 	  --personal
 
 reset: ## Factory reset the physical node (DESTRUCTIVE — wipes disk)
