@@ -41,9 +41,9 @@ The cluster runs on **Talos Linux**, an immutable, secure, and ephemeral Linux d
 
 ### Node Specifications
 
-| Hostname | Role | CPU | RAM | Storage | IP Address | OS |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`homelab`** | Controlplane + Worker | Intel Core i7 (8 vCPUs) | 32 GB DDR4 | 480 GB SSD (Kingston SA400) | `192.168.18.100/24` | Talos Linux v1.13.9 |
+| Hostname | Role | CPU | RAM | Storage | OS |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **`homelab`** | Controlplane + Worker | Intel Core i7 (8 vCPUs) | 32 GB DDR4 | 480 GB SSD (Kingston SA400) | Talos Linux v1.13.9 |
 
 ---
 
