@@ -184,35 +184,61 @@ Flux will automatically pull the commit, decrypt `oauth-secret.sops.yaml`, apply
 
 Once the Tailscale Operator is running, you can expose any Kubernetes Service or Ingress directly to your tailnet with automatic HTTPS certificates.
 
-### Pattern A: Expose a Service Directly (MagicDNS HTTPS)
+### Pattern A: Expose via Ingress (Recommended for Automatic HTTPS)
 
-Add annotations to the Service manifest:
+To expose an HTTP/web application with automatic Let's Encrypt HTTPS certificates (`https://<hostname>.<tailnet>.ts.net`), create an `Ingress` with `ingressClassName: tailscale`:
+
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nginx
+  namespace: default
+spec:
+  ingressClassName: tailscale
+  tls:
+    - hosts:
+        - nginx      # -> https://nginx.<tailnet>.ts.net
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx
+                port:
+                  number: 80
+```
+
+The Tailscale Operator will:
+1. Spin up a lightweight L7 proxy pod in the `network` namespace.
+2. Join your tailnet as a device named `nginx`.
+3. Automatically provision a trusted Let's Encrypt TLS certificate for `https://nginx.<tailnet-name>.ts.net`.
+4. Listen on port 443 (HTTPS) and automatically redirect HTTP port 80 to HTTPS.
+
+### Pattern B: Expose a Service Directly (Layer 4 TCP / Plain Stream)
+
+For non-HTTP services or raw TCP streams without TLS termination, annotate the `Service` directly:
 
 ```yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: longhorn-frontend
-  namespace: storage
+  name: raw-tcp-service
+  namespace: default
   annotations:
     tailscale.com/expose: "true"
-    tailscale.com/hostname: "longhorn"
+    tailscale.com/hostname: "raw-service"
 spec:
   type: ClusterIP
   selector:
-    app: longhorn-ui
+    app: raw-service
   ports:
-    - name: http
-      port: 80
-      targetPort: 8000
+    - name: tcp-stream
+      port: 9000
+      targetPort: 9000
 ```
-
-The Tailscale Operator will automatically:
-1. Spin up a lightweight proxy pod in the `storage` namespace.
-2. Join your tailnet as a device named `longhorn`.
-3. Provision an automatic Let's Encrypt TLS certificate for `https://longhorn.<tailnet-name>.ts.net`.
-
-### Pattern B: Expose as Subnet Router (Optional)
 
 To access the entire Kubernetes Pod CIDR or node LAN from your Tailnet without per-service proxies, configure a `Connector` resource:
 
