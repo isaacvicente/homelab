@@ -26,6 +26,8 @@ jobs:
               truthy: disable
               comments:
                 min-spaces-from-content: 1
+            ignore: |
+              kubernetes/flux-system/gotk-components.yaml
 
   talhelper-validate:
     name: Validate Talos Config
