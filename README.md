@@ -2,7 +2,7 @@
 
 <img src="https://github.com/user-attachments/assets/0248f379-cc4a-4a59-a400-014a750c61fa" align="center" width="144px" height="144px"/>
 
-### My Homelab Kubernetes Cluster <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.gif" alt="✨" width="16" height="16">
+### My k8s homelab <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.gif" alt="✨" width="16" height="16">
 
 _... single-node baremetal Talos Linux automated via [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate) and [GitHub Actions](https://github.com/features/actions)_ <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif" alt="🤖" width="16" height="16">
 
@@ -20,8 +20,8 @@ _... single-node baremetal Talos Linux automated via [Flux](https://github.com/f
 
 <div align="center">
 
-[![Lint & Validate](https://img.shields.io/github/actions/workflow/status/isaacvicente/homelab/lint.yaml?branch=main&label=Lint%20%26%20Validate&style=flat-square&logo=githubactions&logoColor=white)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)&nbsp;&nbsp;
-[![Security & Secret Scan](https://img.shields.io/github/actions/workflow/status/isaacvicente/homelab/security.yaml?branch=main&label=Security%20Scan&style=flat-square&logo=githubactions&logoColor=white)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
+[![Lint & Validate](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)&nbsp;&nbsp;
+[![Security & Secret Scan](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
 
 </div>
 
