@@ -2,9 +2,9 @@
 
 <img src="https://github.com/user-attachments/assets/0248f379-cc4a-4a59-a400-014a750c61fa" align="center" width="144px" height="144px"/>
 
-### My homelab k8s cluster <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.gif" alt="✨" width="16" height="16">
+### My Homelab Kubernetes Cluster <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.gif" alt="✨" width="16" height="16">
 
-_... single-node baremetal Talos Linux automated via [Flux](https://github.com/fluxcd/flux2) and [Renovate](https://github.com/renovatebot/renovate)_ <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif" alt="🤖" width="16" height="16">
+_... single-node baremetal Talos Linux automated via [Flux](https://github.com/fluxcd/flux2), [Renovate](https://github.com/renovatebot/renovate) and [GitHub Actions](https://github.com/features/actions)_ <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif" alt="🤖" width="16" height="16">
 
 </div>
 
@@ -20,58 +20,93 @@ _... single-node baremetal Talos Linux automated via [Flux](https://github.com/f
 
 <div align="center">
 
-[![Lint & Validate](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)&nbsp;&nbsp;
-[![Security & Secret Scan](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
+[![Lint & Validate](https://img.shields.io/github/actions/workflow/status/isaacvicente/homelab/lint.yaml?branch=main&label=Lint%20%26%20Validate&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)&nbsp;&nbsp;
+[![Security Scan](https://img.shields.io/github/actions/workflow/status/isaacvicente/homelab/security.yaml?branch=main&label=Security%20Scan&style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
 
 </div>
 
 ---
 
-## Architecture
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4a1/512.gif" alt="💡" width="20" height="20"> Overview
+
+This repository contains the declarative configuration for my baremetal Kubernetes homelab. Everything adheres to **Infrastructure as Code (IaC)** and **GitOps** principles using **Talos Linux**, **Flux CD**, **SOPS + age**, **Renovate**, and **GitHub Actions**.
+
+---
+
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f331/512.gif" alt="🌱" width="20" height="20"> Kubernetes & Hardware
+
+The cluster runs on **Talos Linux**, an immutable, secure, and ephemeral Linux distribution built strictly for Kubernetes. It runs directly on baremetal hardware with no hypervisors or VM layers.
+
+🔸 _[Click here](talos/talconfig.yaml) to view my declarative Talos configuration._
+
+### Node Specifications
+
+| Hostname | Role | CPU | RAM | Storage | IP Address | OS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`homelab`** | Controlplane + Worker | Intel Core i7 (8 vCPUs) | 32 GB DDR4 | 480 GB SSD (Kingston SA400) | `192.168.18.100/24` | Talos Linux v1.13.9 |
+
+---
+
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4e6/512.gif" alt="📦" width="20" height="20"> Core Components
+
+- **[Flux CD](https://fluxcd.io/)**: GitOps continuous delivery engine that automatically reconciles all manifests from the `kubernetes/` directory.
+- **[Longhorn](https://longhorn.io/)**: Distributed cloud-native block storage configured for single-node resilience (`replicaCount: 1`).
+- **[Tailscale](https://tailscale.com/)**:
+  - **Operator (In-Cluster)**: Automated HTTPS MagicDNS Ingress endpoints and secure Kubernetes API server proxy.
+  - **System Extension (OS-Level)**: Runs directly under Talos `machined` for out-of-band remote `talosctl` management independent of Kubernetes health.
+- **[SOPS](https://github.com/getsops/sops) + [age](https://github.com/FiloSottile/age)**: In-repo secret encryption for cluster PKI and Kubernetes secrets.
+- **[Renovate](https://docs.renovatebot.com/)**: Automated dependency updates for Helm charts, GitHub Actions, Talos Linux, and Kubernetes.
+
+---
+
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4c1/512.gif" alt="📁" width="20" height="20"> Repository Structure
 
 ```
-Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs)
-│
-├── Hardware Extensions (Talos Image Factory via talhelper)
-│   ├── siderolabs/intel-ucode        (CPU microcode)
-│   ├── siderolabs/i915               (Intel iGPU / QuickSync)
-│   ├── siderolabs/iscsi-tools        (Longhorn CSI)
-│   ├── siderolabs/util-linux-tools   (fstrim / filesystem tools)
-│   └── siderolabs/tailscale          (Baremetal OS-level Tailnet integration)
-│
-├── Network & OS
-│   ├── Static IP: 192.168.18.100/24
-│   └── Flannel CNI (built-in)
-│
-└── GitOps Workloads (Flux CD)
-    ├── Longhorn Storage   (single-node, replica=1)
-    └── Tailscale Operator (private HTTPS via MagicDNS)
+homelab/
+├── .github/                           # CI workflows (lint, security) & Renovate config
+├── docs/                              # Deployment & Tailscale runbooks
+├── talos/                             # Declarative Talos machine configuration (talhelper)
+│   ├── talconfig.yaml                 # Node specs, network, and Image Factory extensions
+│   ├── talsecret.sops.yaml            # Encrypted cluster PKI & secrets
+│   └── talenv.sops.yaml               # Encrypted environment secrets (Tailscale auth key)
+├── kubernetes/                        # Flux CD GitOps tree
+│   ├── flux-system/                   # Flux sync & controllers
+│   └── apps/
+│       ├── storage/longhorn/          # Longhorn storage engine & Tailscale Ingress
+│       └── network/tailscale/         # Tailscale operator, API proxy, & RBAC
+├── Taskfile.yaml                      # Declarative automation tasks (go-task)
+└── Makefile                           # Backward-compatible forwarding wrapper
 ```
 
 ---
 
-## Prerequisites
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/26a1/512.gif" alt="⚡" width="20" height="20"> Quick Start & Automation
 
-- `task` (`go-task`), `talosctl`, `talhelper`, `sops`, `age`, `flux`, `kubectl`
-
-See [Deployment Guide](docs/deployment-guide.md) for install instructions.
-
----
-
-## Quick Start
+Automation is powered by **`go-task`** (`Taskfile.yaml`). Run `task` to view all available commands:
 
 ```bash
-task age-key          # 1. Create age encryption key
-task secrets          # 2. Generate & encrypt cluster secrets
-task generate         # 3. Render Talos machine configs
-# Flash Talos ISO → boot Dell Optiplex → then:
-task apply            # 4. Push config to node
-task bootstrap        # 5. Bootstrap etcd
-task kubeconfig       # 6. Fetch kubeconfig
+task age-key          # 1. Generate local age encryption key
+task secrets          # 2. Generate and encrypt cluster secrets
+task generate         # 3. Render Talos machine configurations
+# Flash ISO → Boot node into maintenance mode → then:
+task apply            # 4. Install Talos OS to disk
+task bootstrap        # 5. Bootstrap etcd control plane
+task kubeconfig       # 6. Fetch admin kubeconfig (~/.kube/homelab.yaml)
 export GITHUB_TOKEN=ghp_...
-task flux-init        # 7. Bootstrap Flux CD
-task sops-secret      # 8. Inject age decryption key into Flux (for encrypted secrets)
+task flux-init        # 7. Bootstrap Flux CD GitOps controllers
+task sops-secret      # 8. Inject age decryption key into cluster
 ```
 
-- **Full walkthrough:** [docs/deployment-guide.md](docs/deployment-guide.md)
-- **Tailscale remote access:** [docs/tailscale-setup.md](docs/tailscale-setup.md)
+### Day-2 Maintenance
+
+```bash
+task lint             # Run local validation checks (talhelper + kustomize)
+task upgrade          # Upgrade Talos OS and system extensions on running node
+```
+
+---
+
+## <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f4d6/512.gif" alt="📖" width="20" height="20"> Documentation
+
+- 🚀 **[Deployment Guide](docs/deployment-guide.md)** — Complete step-by-step walkthrough from baremetal to running cluster.
+- 🔒 **[Tailscale & SOPS Guide](docs/tailscale-setup.md)** — Setting up secure remote access, HTTPS Ingresses, and out-of-band node management.
