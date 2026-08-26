@@ -21,7 +21,8 @@
     {
       "description": "Talos Linux & Kubernetes upgrades",
       "matchPackageNames": ["siderolabs/talos", "kubernetes/kubernetes"],
-      "groupName": "Talos & Kubernetes"
+      "groupName": "Talos & Kubernetes",
+      "dependencyDashboardApproval": true
     }
   ],
   "customManagers": [
@@ -30,22 +31,22 @@
       "description": "Update Talos version in talconfig.yaml",
       "fileMatch": ["^talos/talconfig\\.ya?ml$"],
       "matchStrings": [
-        "talosVersion:\\s+(?<currentValue>v?[0-9.]+)"
+        "talosVersion:\\s+[\"']?(?<currentValue>v[0-9.]+)[\"']?"
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "siderolabs/talos",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+      "versioningTemplate": "semver"
     },
     {
       "customType": "regex",
       "description": "Update Kubernetes version in talconfig.yaml",
       "fileMatch": ["^talos/talconfig\\.ya?ml$"],
       "matchStrings": [
-        "kubernetesVersion:\\s+(?<currentValue>v?[0-9.]+)"
+        "kubernetesVersion:\\s+[\"']?(?<currentValue>v[0-9.]+)[\"']?"
       ],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "kubernetes/kubernetes",
-      "extractVersionTemplate": "^v?(?<version>.*)$"
+      "versioningTemplate": "semver"
     }
   ]
 }
