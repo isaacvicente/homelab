@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Run yamllint
         uses: ibiqlik/action-yamllint@v3
@@ -28,16 +28,18 @@ jobs:
               truthy: disable
               comments:
                 min-spaces-from-content: 1
+            ignore: |
+              kubernetes/flux-system/gotk-components.yaml
 
   talhelper-validate:
     name: Validate Talos Config
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Talhelper
-        uses: jaxxstorm/action-install-gh-release@v1.12.0
+        uses: jaxxstorm/action-install-gh-release@v3.0.0
         with:
           repo: budimanjojo/talhelper
 
@@ -50,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Kustomize
         uses: fluxcd/pkg/actions/kustomize@main

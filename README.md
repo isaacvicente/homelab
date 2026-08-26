@@ -1,15 +1,29 @@
-# Homelab — Baremetal Talos Linux with talhelper & Flux CD
+<div align="center">
 
-[![Lint & Validate](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml/badge.svg)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)
-[![Security & Secret Scan](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml/badge.svg)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
-[![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen.svg)](https://docs.renovatebot.com/)
-[![Talos Linux](https://img.shields.io/badge/Talos_Linux-v1.13.9-3b82f6.svg)](https://talos.dev)
-[![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.36.0-326ce5.svg?logo=kubernetes&logoColor=white)](https://kubernetes.io)
-[![Flux CD](https://img.shields.io/badge/GitOps-Flux_CD-2d88ff.svg?logo=flux&logoColor=white)](https://fluxcd.io)
+<img src="https://github.com/user-attachments/assets/0248f379-cc4a-4a59-a400-014a750c61fa" align="center" width="144px" height="144px"/>
 
-A declarative, single-node baremetal Kubernetes homelab.
+### My homelab k8s cluster <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/2728/512.gif" alt="✨" width="16" height="16">
 
-**Stack:** Talos Linux · `talhelper` · SOPS + `age` · Flannel CNI · Flux CD (GitOps) · Longhorn Storage · Tailscale Operator
+_... single-node baremetal Talos Linux automated via [Flux](https://github.com/fluxcd/flux2) and [Renovate](https://github.com/renovatebot/renovate)_ <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f916/512.gif" alt="🤖" width="16" height="16">
+
+</div>
+
+<div align="center">
+
+[![Talos](https://img.shields.io/badge/Talos_Linux-v1.13.9-3b82f6.svg?style=for-the-badge&logo=talos&logoColor=white)](https://talos.dev)&nbsp;&nbsp;
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.36.0-326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)](https://kubernetes.io)&nbsp;&nbsp;
+[![Flux](https://img.shields.io/badge/GitOps-Flux_CD-2d88ff.svg?style=for-the-badge&logo=flux&logoColor=white)](https://fluxcd.io)&nbsp;&nbsp;
+[![Tailscale](https://img.shields.io/badge/Tailscale-v1.102.3-24292f.svg?style=for-the-badge&logo=tailscale&logoColor=white)](https://tailscale.com)&nbsp;&nbsp;
+[![Renovate](https://img.shields.io/badge/Renovate-enabled-brightgreen.svg?style=for-the-badge&logo=renovate&logoColor=white)](https://docs.renovatebot.com/)
+
+</div>
+
+<div align="center">
+
+[![Lint & Validate](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/lint.yaml)&nbsp;&nbsp;
+[![Security & Secret Scan](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml/badge.svg?branch=main)](https://github.com/isaacvicente/homelab/actions/workflows/security.yaml)
+
+</div>
 
 ---
 
