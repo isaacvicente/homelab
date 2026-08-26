@@ -1,0 +1,66 @@
+name: Lint & Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  yaml-lint:
+    name: YAML Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run yamllint
+        uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .
+          config_data: |
+            extends: default
+            rules:
+              line-length: disable
+              document-start: disable
+              truthy: disable
+              comments:
+                min-spaces-from-content: 1
+
+  talhelper-validate:
+    name: Validate Talos Config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Talhelper
+        uses: jaxxstorm/action-install-gh-release@v1.12.0
+        with:
+          repo: budimanjojo/talhelper
+
+      - name: Validate talconfig
+        run: |
+          talhelper validate talconfig talos/talconfig.yaml --no-substitute
+
+  kustomize-build:
+    name: Kustomize Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Kustomize
+        uses: fluxcd/pkg/actions/kustomize@main
+
+      - name: Build Top-Level Kustomization
+        run: |
+          kustomize build kubernetes > /dev/null
+          echo "Top-level kustomize build successful."
+
+      - name: Build All App Overlays
+        run: |
+          for dir in $(find kubernetes/apps -type f -name "kustomization.yaml" -exec dirname {} \;); do
+            echo "Validating kustomization in $dir..."
+            kustomize build "$dir" > /dev/null
+          done

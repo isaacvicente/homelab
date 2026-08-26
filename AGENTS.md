@@ -13,13 +13,14 @@ Dell Optiplex 7050 (Baremetal Talos Linux — 32 GB RAM, 8 vCPUs, Static IP: 192
 │
 ├── Hardware Extensions (Talos Image Factory via talhelper)
 │   ├── siderolabs/intel-ucode      (Intel 6th/7th Gen CPU stability)
-│   ├── siderolabs/i915-ucode       (Intel HD 530/630 QuickSync for Plex)
+│   ├── siderolabs/i915             (Intel HD 530/630 QuickSync for Plex)
 │   ├── siderolabs/iscsi-tools      (Longhorn CSI prerequisite)
-│   └── siderolabs/util-linux-tools (fstrim for SSDs + CSI filesystem tools)
+│   ├── siderolabs/util-linux-tools (fstrim for SSDs + CSI filesystem tools)
+│   └── siderolabs/tailscale        (Baremetal OS-level Tailnet integration)
 │
 ├── Automation & Secret Layer
 │   ├── talhelper                   (Single declarative talos/talconfig.yaml)
-│   └── SOPS + age                  (Encrypted secrets: talos/talsecret.sops.yaml)
+│   └── SOPS + age                  (Encrypted secrets: talos/talsecret.sops.yaml, talos/talenv.sops.yaml)
 │
 ├── Kubernetes (Single Node: Controlplane + Worker roles)
 │   ├── allowSchedulingOnControlPlanes: true
@@ -42,14 +43,17 @@ homelab/
 ├── docs/                              # Human-facing documentation
 │   ├── deployment-guide.md            # Full deployment walkthrough
 │   └── tailscale-setup.md             # Tailscale remote access setup
-├── Makefile                           # talhelper & Flux automation targets
+├── Taskfile.yaml                      # Declarative automation tasks (go-task)
+├── Makefile                           # Forwarding wrapper for backward compatibility
 ├── README.md                          # Human-facing documentation
 ├── .sops.yaml                         # SOPS encryption rules (age public key)
 ├── .gitignore                         # Exclusions (unencrypted private keys, clusterconfig)
 │
 ├── talos/                             # Talos OS machine configuration
 │   ├── talconfig.yaml                 # Declarative source of truth for Talos
-│   └── talsecret.sops.yaml            # SOPS-encrypted cluster PKI & secrets (safe in Git)
+│   ├── talsecret.sops.yaml            # SOPS-encrypted cluster PKI & secrets (safe in Git)
+│   ├── talenv.sops.yaml.example       # Template for encrypted Talos environment variables
+│   └── talenv.sops.yaml               # SOPS-encrypted environment variables (auth keys)
 │
 └── kubernetes/                        # Flux CD GitOps tree
     ├── kustomization.yaml             # Top-level aggregator (flux-system + apps)
@@ -109,14 +113,14 @@ When modifying this codebase, AI agents **must strictly adhere** to the followin
 Before submitting code modifications, AI agents **must** verify:
 
 ```bash
-# 1. Check YAML syntax across talos/ and kubernetes/
-python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('talos/*.yaml') + glob.glob('kubernetes/**/*.yaml', recursive=True)]"
+# 1. Check YAML syntax across talos/, kubernetes/, and Taskfile.yaml
+python3 -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('talos/*.yaml') + glob.glob('kubernetes/**/*.yaml', recursive=True) + ['Taskfile.yaml']]"
 
-# 2. Check Makefile targets
-make help
+# 2. Check Taskfile / Makefile targets
+task --list # or make help
 ```
 
-> **Note:** The `make flux-init` target requires a `GITHUB_TOKEN` environment variable (GitHub PAT with repo permissions). The Makefile will abort with a clear error if this is not set.
+> **Note:** The `task flux-init` target requires a `GITHUB_TOKEN` environment variable (GitHub PAT with repo permissions).
 
 ---
 

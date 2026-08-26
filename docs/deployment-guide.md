@@ -8,6 +8,7 @@ Step-by-step guide to deploy the homelab from scratch.
 
 Install the following on your **development machine**:
 
+- `task` (`go-task`) — `brew install go-task` or `go install github.com/go-task/task/v3/cmd/task@latest`
 - `talosctl` — [talos.dev/install](https://talos.dev/install) (e.g. `curl -sL https://talos.dev/install | sh`)
 - `talhelper` — `brew install budimanjojo/tap/talhelper` or `go install github.com/budimanjojo/talhelper@latest`
 - `sops` — `brew install sops`
@@ -20,7 +21,7 @@ Install the following on your **development machine**:
 ## 1. Initialize Age Encryption Key
 
 ```bash
-make age-key
+task age-key
 ```
 
 This generates `~/.config/sops/age/keys.txt` (if not already present) and displays
@@ -32,10 +33,10 @@ your public key. Paste the public key into `.sops.yaml`.
 
 ```bash
 # Generate & encrypt cluster secrets
-make secrets
+task secrets
 
 # Generate machine configs (talos/clusterconfig/)
-make generate
+task generate
 ```
 
 ---
@@ -59,13 +60,13 @@ From your development machine:
 
 ```bash
 # Push machine config (formats disk & installs Talos):
-make apply
+task apply
 
 # After the server reboots into Talos, bootstrap etcd:
-make bootstrap
+task bootstrap
 
 # Fetch admin kubeconfig:
-make kubeconfig
+task kubeconfig
 ```
 
 Verify the cluster is running:
@@ -99,7 +100,7 @@ it is not stored in the cluster.
 ### Run the bootstrap
 
 ```bash
-make flux-init
+task flux-init
 ```
 
 Flux will:
@@ -112,4 +113,39 @@ Flux will:
 This automatically deploys:
 
 - **Longhorn Storage** — single-node persistent volumes (`defaultReplicaCount: 1`)
-- **Tailscale Operator** — requires in-cluster SOPS decryption key (`make sops-secret`), see [Tailscale Setup](tailscale-setup.md)
+- **Tailscale Operator** — requires in-cluster SOPS decryption key (`task sops-secret`), see [Tailscale Setup](tailscale-setup.md)
+
+---
+
+## 6. Day-2 Operations & Maintenance
+
+Once your homelab is up and running, use these standard workflows for ongoing maintenance:
+
+### Upgrading Talos OS & System Extensions
+When you update `talosVersion`, add/modify hardware extensions, or adjust kernel parameters in `talos/talconfig.yaml`:
+
+```bash
+# 1. Re-render machine configs and Image Factory installer URLs:
+task generate
+
+# 2. Apply config and upgrade the running node:
+task upgrade
+```
+
+### Upgrading Kubernetes
+When bumping `kubernetesVersion` in `talos/talconfig.yaml`:
+
+```bash
+# 1. Update talconfig.yaml and regenerate configs:
+task generate
+
+# 2. Upgrade Kubernetes control plane components:
+talosctl --talosconfig talos/clusterconfig/talosconfig upgrade-k8s \
+  --nodes 192.168.18.100 \
+  --to v1.x.y
+```
+
+### Updating Workloads & Applications
+To deploy, update, or remove applications:
+- Edit manifests under `kubernetes/apps/`
+- Commit and push to `main` — Flux CD will automatically detect and reconcile your changes in GitOps.

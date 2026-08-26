@@ -1,0 +1,41 @@
+name: Security & Secret Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gitleaks:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sops-integrity:
+    name: Verify SOPS Encryption
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Check SOPS Metadata in Encrypted Files
+        run: |
+          FAILED=0
+          for file in $(find . -type f -name "*.sops.yaml" -not -name ".sops.yaml" -not -name "*.example"); do
+            echo "Checking $file for SOPS encryption metadata..."
+            if ! grep -q "sops:" "$file"; then
+              echo "::error file=$file::File $file is named *.sops.yaml but does not contain SOPS encryption metadata!"
+              FAILED=1
+            fi
+          done
+          exit $FAILED

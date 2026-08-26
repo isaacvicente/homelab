@@ -1,0 +1,5 @@
+# Example environment variables for talhelper & Talos machine config
+# 1. Create a Reusable auth key in Tailscale Admin Console (Settings -> Keys) with tag:k8s-operator
+# 2. Copy this file to talos/talenv.sops.yaml and paste your auth key
+# 3. Encrypt it using: sops -e -i talos/talenv.sops.yaml
+tailscale_auth_key: "tskey-auth-kxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"

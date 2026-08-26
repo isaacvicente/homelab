@@ -17,6 +17,12 @@ nodes:
             - siderolabs/i915
             - siderolabs/iscsi-tools
             - siderolabs/util-linux-tools
+            - siderolabs/tailscale
+    extensionServices:
+      - name: tailscale
+        environment:
+          - TS_AUTHKEY=${tailscale_auth_key}
+          - TS_EXTRA_ARGS=--advertise-tags=tag:k8s-operator
     networkInterfaces:
       - interface: enp0s31f6
         addresses:

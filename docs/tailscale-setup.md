@@ -14,7 +14,7 @@ flowchart TD
         A["Tailscale Admin Console<br/>(OAuth Client Credentials)"] --> B["Create oauth-secret.sops.yaml"]
         B --> C["sops -e -i oauth-secret.sops.yaml<br/>(Encrypted via .sops.yaml)"]
         C --> D["git commit & push"]
-        E["~/.config/sops/age/keys.txt"] -->|make sops-secret| F["sops-age Secret<br/>(namespace: flux-system)"]
+        E["~/.config/sops/age/keys.txt"] -->|task sops-secret| F["sops-age Secret<br/>(namespace: flux-system)"]
     end
 
     subgraph Cluster["Kubernetes (Baremetal Talos)"]
@@ -46,10 +46,10 @@ flowchart TD
 
 Flux requires your private `age` key inside the cluster (in the `flux-system` namespace) to decrypt secrets.
 
-Run the Makefile target:
+Run the Taskfile target:
 
 ```bash
-make sops-secret
+task sops-secret
 ```
 
 *Or run the `kubectl` command directly:*
@@ -289,6 +289,70 @@ kubectl config use-context tailscale-operator
 
 ---
 
+## Step 8: Manage the Baremetal Talos Node over Tailscale (`siderolabs/tailscale`)
+
+To manage your physical host with `talosctl` even if Kubernetes, CNI, or Flux is down, Tailscale runs as a native **Talos Linux System Extension** (`siderolabs/tailscale`).
+
+```mermaid
+flowchart TD
+    A["talosctl (Laptop / Phone)"] -->|Tailscale WireGuard Mesh| B["homelab (Talos Host Node)"]
+    B -->|Port 50000| C["Talos API (machined)"]
+    B -->|Port 6443| D["Kube API Server"]
+```
+
+### 1. Create a Reusable Tailscale Auth Key
+
+1. In [Tailscale Admin Console → Settings → Keys](https://login.tailscale.com/admin/settings/keys), click **Generate auth key**.
+2. Settings:
+   - **Reusable**: `Yes`
+   - **Tags**: `tag:k8s-operator`
+   - **Pre-authorized**: `Yes`
+3. Copy the generated key (`tskey-auth-...`).
+
+### 2. Configure & Encrypt `talenv.sops.yaml`
+
+1. Copy the example file:
+   ```bash
+   cp talos/talenv.sops.yaml.example talos/talenv.sops.yaml
+   ```
+2. Paste your auth key in `talos/talenv.sops.yaml`:
+   ```yaml
+   tailscale_auth_key: "tskey-auth-kxxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+   ```
+3. Encrypt it with SOPS:
+   ```bash
+   sops -e -i talos/talenv.sops.yaml
+   ```
+
+### 3. Generate and Apply Machine Configuration
+
+1. Render the updated Talos machine configuration:
+   ```bash
+   task generate
+   ```
+
+2. Upgrade the running node (or apply during initial installation):
+   ```bash
+   task upgrade
+   ```
+
+### 4. Manage with `talosctl` over Tailscale
+
+Once authenticated, the node joins your Tailnet as **`homelab`**. You can manage it from anywhere:
+
+```bash
+# View dashboard over Tailscale:
+talosctl --talosconfig talos/clusterconfig/talosconfig --nodes homelab dashboard
+
+# Check system logs:
+talosctl --talosconfig talos/clusterconfig/talosconfig --nodes homelab dmesg
+
+# Reboot node out-of-band:
+talosctl --talosconfig talos/clusterconfig/talosconfig --nodes homelab reboot
+```
+
+---
+
 ## Verification & Troubleshooting
 
 ### Check Flux Decryption & Reconciliation
@@ -316,4 +380,7 @@ kubectl logs -n network -l app.kubernetes.io/name=tailscale-operator -f
 
 ### Check Devices in Tailscale Admin
 
-Visit [login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines) — you should see your cluster nodes or exposed services registered with green status indicators.
+Visit [login.tailscale.com/admin/machines](https://login.tailscale.com/admin/machines) — you should see:
+- **`homelab`**: The baremetal Talos Linux physical host.
+- **`tailscale-operator`**: The in-cluster Kubernetes API proxy.
+- **`nginx` / `longhorn`**: The individual exposed application Ingresses.

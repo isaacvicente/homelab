@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "labels": ["dependencies", "renovate"],
+  "packageRules": [
+    {
+      "description": "Group all Flux HelmReleases together",
+      "matchDatasources": ["helm"],
+      "groupName": "Flux Helm Releases",
+      "automerge": false
+    },
+    {
+      "description": "Group GitHub Actions updates",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "Talos Linux & Kubernetes upgrades",
+      "matchPackageNames": ["siderolabs/talos", "kubernetes/kubernetes"],
+      "groupName": "Talos & Kubernetes"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Talos version in talconfig.yaml",
+      "fileMatch": ["^talos/talconfig\\.ya?ml$"],
+      "matchStrings": [
+        "talosVersion:\\s+(?<currentValue>v?[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "siderolabs/talos",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Kubernetes version in talconfig.yaml",
+      "fileMatch": ["^talos/talconfig\\.ya?ml$"],
+      "matchStrings": [
+        "kubernetesVersion:\\s+(?<currentValue>v?[0-9.]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubernetes/kubernetes",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ]
+}
