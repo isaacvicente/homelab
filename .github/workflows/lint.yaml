@@ -18,6 +18,8 @@ jobs:
         uses: ibiqlik/action-yamllint@v3
         with:
           file_or_dir: .
+          ignore_or_exclude: |
+            kubernetes/flux-system/gotk-components.yaml
           config_data: |
             extends: default
             rules:
