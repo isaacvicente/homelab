@@ -9,7 +9,8 @@ Step-by-step guide to deploy the homelab from scratch.
 Install the following on your **development machine**:
 
 - `task` (`go-task`) — `brew install go-task` or `go install github.com/go-task/task/v3/cmd/task@latest`
-- `talosctl` — [talos.dev/install](https://talos.dev/install) (e.g. `curl -sL https://talos.dev/install | sh`)
+- `talosctl` — [talos.dev/install](https://talos.dev/install) (e.g. `curl -sL
+https://talos.dev/install | sh`)
 - `talhelper` — `brew install budimanjojo/tap/talhelper` or `go install github.com/budimanjojo/talhelper@latest`
 - `sops` — `brew install sops`
 - `age` — `brew install age`
@@ -50,6 +51,7 @@ task generate
    ```bash
    sudo dd if=metal-amd64.iso of=/dev/sdX bs=4M status=progress && sync
    ```
+
 3. Boot the Dell Optiplex 7050 from the USB into **maintenance mode**.
 
 ---
@@ -113,7 +115,8 @@ Flux will:
 This automatically deploys:
 
 - **Longhorn Storage** — single-node persistent volumes (`defaultReplicaCount: 1`)
-- **Tailscale Operator** — requires in-cluster SOPS decryption key (`task sops-secret`), see [Tailscale Setup](tailscale-setup.md)
+- **Tailscale Operator** — requires in-cluster SOPS decryption key (`task
+sops-secret`), see [Tailscale Setup](tailscale-setup.md)
 
 ---
 
@@ -122,7 +125,9 @@ This automatically deploys:
 Once your homelab is up and running, use these standard workflows for ongoing maintenance:
 
 ### Upgrading Talos OS & System Extensions
-When you update `talosVersion`, add/modify hardware extensions, or adjust kernel parameters in `talos/talconfig.yaml`:
+
+When you update `talosVersion`, add/modify hardware extensions, or adjust
+kernel parameters in `talos/talconfig.yaml`:
 
 ```bash
 # 1. Re-render machine configs and Image Factory installer URLs:
@@ -133,6 +138,7 @@ task upgrade
 ```
 
 ### Upgrading Kubernetes
+
 When bumping `kubernetesVersion` in `talos/talconfig.yaml`:
 
 ```bash
@@ -146,6 +152,9 @@ talosctl --talosconfig talos/clusterconfig/talosconfig upgrade-k8s \
 ```
 
 ### Updating Workloads & Applications
+
 To deploy, update, or remove applications:
+
 - Edit manifests under `kubernetes/apps/`
-- Commit and push to `main` — Flux CD will automatically detect and reconcile your changes in GitOps.
+- Commit and push to `main` — Flux CD will automatically detect and reconcile
+your changes in GitOps.
