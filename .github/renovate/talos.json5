@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "packageRules": [
+    {
+      "description": "Talos Linux & Kubernetes upgrades",
+      "matchPackageNames": ["siderolabs/talos", "kubernetes/kubernetes"],
+      "groupName": "Talos & Kubernetes",
+      "dependencyDashboardApproval": true
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update Talos version in talconfig.yaml",
+      "fileMatch": ["^talos/talconfig\\.ya?ml$"],
+      "matchStrings": [
+        "talosVersion:\\s+[\"']?(?<currentValue>v[0-9.]+)[\"']?"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "siderolabs/talos",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Kubernetes version in talconfig.yaml",
+      "fileMatch": ["^talos/talconfig\\.ya?ml$"],
+      "matchStrings": [
+        "kubernetesVersion:\\s+[\"']?(?<currentValue>v[0-9.]+)[\"']?"
+      ],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "kubernetes/kubernetes",
+      "versioningTemplate": "semver"
+    }
+  ]
+}

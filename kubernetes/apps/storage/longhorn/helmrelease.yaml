@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: longhorn
-      version: 1.8.x
+      version: 1.12.x
       sourceRef:
         kind: HelmRepository
         name: longhorn
@@ -21,7 +21,7 @@ spec:
       retries: 3
   values:
     defaultSettings:
-      # CRITICAL FOR SINGLE-NODE: default replica count must be 1
+      # Single node cluster: default replica count *must* be 1
       defaultReplicaCount: 1
       replicaAutoBalance: disabled
       storageOverProvisioningPercentage: 100

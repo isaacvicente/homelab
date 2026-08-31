@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "flux": {
+    "fileMatch": ["(^|/)kubernetes/.+\\.ya?ml$"]
+  },
+  "packageRules": [
+    {
+      "description": "Group all Flux HelmReleases together",
+      "matchDatasources": ["helm"],
+      "groupName": "Flux Helm Releases",
+      "automerge": false
+    }
+  ]
+}
