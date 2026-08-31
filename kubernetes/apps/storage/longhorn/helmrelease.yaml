@@ -8,15 +8,17 @@ spec:
   chart:
     spec:
       chart: longhorn
-      version: 1.10.x
+      version: 1.12.x
       sourceRef:
         kind: HelmRepository
         name: longhorn
         namespace: storage
   install:
+    crds: CreateReplace
     remediation:
       retries: 3
   upgrade:
+    crds: CreateReplace
     remediation:
       retries: 3
   values:
