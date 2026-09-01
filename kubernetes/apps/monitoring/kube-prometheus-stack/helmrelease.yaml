@@ -1,0 +1,85 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kube-prometheus-stack
+  namespace: monitoring
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: kube-prometheus-stack
+      version: 88.x
+      sourceRef:
+        kind: HelmRepository
+        name: prometheus-community
+        namespace: monitoring
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  valuesFrom:
+    - kind: Secret
+      name: grafana-admin-secret
+      valuesKey: admin_password
+      targetPath: grafana.adminPassword
+  values:
+    # ── Prometheus ────────────────────────────────────────────────────────────
+    prometheus:
+      prometheusSpec:
+        # Cluster-wide ServiceMonitor/PodMonitor/Rule discovery
+        serviceMonitorSelectorNilUsesHelmValues: false
+        podMonitorSelectorNilUsesHelmValues: false
+        ruleNamespaceSelector: {}
+        ruleSelector: {}
+        retention: 30d
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 20Gi
+
+    # ── Alertmanager ──────────────────────────────────────────────────────────
+    alertmanager:
+      alertmanagerSpec:
+        # Use the SOPS-encrypted Secret for the full Alertmanager config
+        configSecret: alertmanager-config
+        storage:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: longhorn
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 2Gi
+
+    # ── Grafana ───────────────────────────────────────────────────────────────
+    grafana:
+      persistence:
+        enabled: true
+        storageClassName: longhorn
+        size: 5Gi
+      ingress:
+        enabled: true
+        ingressClassName: tailscale
+        hosts:
+          - grafana
+        tls:
+          - hosts:
+              - grafana
+
+    # ── etcd (Talos exposes metrics on port 2381) ─────────────────────────────
+    kubeEtcd:
+      enabled: true
+      endpoints:
+        - 192.168.18.100
+      service:
+        enabled: true
+        port: 2381
+        targetPort: 2381
