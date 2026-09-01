@@ -1,0 +1,33 @@
+# To create:
+# 1. Create a Telegram bot via @BotFather and retrieve <YOUR_BOT_TOKEN>.
+# 2. Retrieve your personal Telegram chat ID via @userinfobot (<YOUR_CHAT_ID>).
+# 3. Update the values below and encrypt with SOPS:
+#    sops --encrypt alertmanager-config.sops.yaml.example > alertmanager-config.sops.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+type: Opaque
+stringData:
+  alertmanager.yaml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: telegram
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+      - name: telegram
+        telegram_configs:
+          - bot_token: "<YOUR_BOT_TOKEN>"
+            chat_id: 123456789
+            parse_mode: HTML
+            message: |
+              {{ range .Alerts }}
+              <b>{{ .Labels.alertname }}</b>
+              {{ if .Annotations.summary }}{{ .Annotations.summary }}{{ end }}
+              {{ if .Annotations.description }}{{ .Annotations.description }}{{ end }}
+              Severity: {{ .Labels.severity }}
+              {{ end }}

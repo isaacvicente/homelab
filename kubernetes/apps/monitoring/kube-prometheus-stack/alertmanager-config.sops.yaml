@@ -1,0 +1,28 @@
+# To create:
+# 1. Create a Telegram bot via @BotFather and retrieve <YOUR_BOT_TOKEN>.
+# 2. Retrieve your personal Telegram chat ID via @userinfobot (<YOUR_CHAT_ID>).
+# 3. Update the values below and encrypt with SOPS:
+#    sops --encrypt alertmanager-config.sops.yaml.example > alertmanager-config.sops.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+    name: alertmanager-config
+    namespace: monitoring
+type: Opaque
+stringData:
+    alertmanager.yaml: ENC[AES256_GCM,data:BV+6DegciDheYT2Z9jTAQVbJhyfRkjslY1pGrPeRVLFxJyAZdLnzhzJSWzB82Zg9dltHE8eugz61XWY9igAKcyfOMzUChfayeTDVgX6rQGr1MOSMRkRLnn+sTF2bir7WaeHqkxASWyHPJYuHMawPQuBriLI11hcQGB246Uo9p+qZXS2QIWA8wq6NUQP58IMID090XNnaJO/ybRhChETZk26w/EYCzCKfP/ViCDavQvCimJb/pJULFzgTcaMMNpCj2a8Xoju2USvH7pGKzHCg7L/guFhyQcP5Q22qvE0euBT/Qbl6A8es3BbjfDMGYWvmJzLJoGQwBrt28BttDbqxBOYPJ+1ehwd6dLDJNMdi64OWbglfwQW9YIwMG810UmBujuE52W5nuL6ViKko0xkYdETgALAm0+/J04EzEgixCmd+JmDOZmvjEBhBClsCoNQvwWMfPCcAEDAgfub37CmZTlSKmx6f57VXQu4G6fCg/NTMxg9DTz886gp0A7UNbrOwLSdft2zZlzn4Isr22E6B8uPYHZTudBlGuiJi40lW63xZa2TExxFsgYoXK3NgAAx86OrF/Cnu0k2YjBTQ5q0VgGPKTvFBGK5/fniy+K5eYU/tODfG4WRquddhY5C08YyOQENWahVgULXMnbNU2K2rUTYLxcJai/v/hPiTBgIij0q5n/mhmoEJBA1LgJxz1IgQRo9Z0ofMEv46E7IGVll37vOJ7+ahlZHgXNjFhnGoDRlJSfuGDCCLRSZTx3dVR3vrFxivqkJXh28oVHThS0qlT+ICVJ6aW5A5Dxrm,iv:mWfz1w8erynivxTx+qBhE2FrLO2P3216R9/CEDC9KoM=,tag:HSaqV7JwgaFgjkpKEDBqeQ==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBUWU56S0s2SmIxcENDY3dL
+            V3l4V1NDWWc0NzJYeWM4UWVhY20rU2RDT25RCmgweXBwLzVnUGo4OEpXODJhUWlZ
+            aWpzQitrbWdOWWNFS0pzWVhDNlZzR28KLS0tIEJ5azhRbndrR1VQZDFFTzRPYW9W
+            VS9KOUNEYklMK2tFVlk2NGxpL1NlSTQKDCDaua0deTvvTTHUqlKQWjoXeyRqraEh
+            11gqf3hl6L+VzPuQoLcbJHfzzgEon8xGaEqsaDBj4TS/agsJT6G7xA==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1hm8fzvp84xsqwtwc2pjkssqe4us5tzq07fxfcu0spch37ad29auqnkygm5
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-09-01T02:03:42Z"
+    mac: ENC[AES256_GCM,data:fZ4r/1PsDx8HqVi52jLEqhaavD/uBNXQpht+JFvXBSbwuVjr831Tt0nQNYrEPSnz4PFwU+ozlLsktCb9t1blpKE4r7YqEifxWAOmg3kAkBB2LT6vO8mb7Lz9ItIWGKwnIBOPFIoOrgE/NzFDO/Uzx/0YwlMI5gWm6ru/7lJZisc=,iv:pugA4wNCqhIdpEhv64TuN+4eGQnLsmWmi4N6VRhwm4U=,tag:C/nrOhOgvPyqiz+KXnYcYA==,type:str]
+    version: 3.13.3
